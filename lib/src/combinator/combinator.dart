@@ -15,6 +15,7 @@ part 'longest.dart';
 part 'map.dart';
 part 'match.dart';
 part 'max_depth.dart';
+part 'negate.dart';
 part 'opt.dart';
 part 'reduce.dart';
 part 'reference.dart';
@@ -51,6 +52,11 @@ abstract class Parser<T> {
 
   /// Prevents recursion past a certain [depth], preventing stack overflow errors.
   Parser<T> maxDepth(int depth) => new _MaxDepth<T>(this, depth);
+
+  /// Ensures this pattern is not matched.
+  ///
+  /// You can provide an [errorMessage].
+  Parser<T> negate({String errorMessage}) => new _Negate<T>(this, errorMessage);
 
   Parser<T> or<U>(Parser other) => any<T>([this, other]);
 

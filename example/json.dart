@@ -12,7 +12,7 @@ Parser jsonGrammar() {
     (r) => num.parse(r.span.text),
   );
 
-  // Parse a string (no escapes supported yet)
+  // Parse a string (no escapes supported, because lazy).
   var string =
       match(new RegExp(r'"[^"]*"'), errorMessage: 'Expected a string.').value(
     (r) => r.span.text.substring(1, r.span.text.length - 1),

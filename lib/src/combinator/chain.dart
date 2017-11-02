@@ -34,7 +34,6 @@ class _Chain<T> extends ListParser<T> {
 
     for (var parser in parsers) {
       var result = parser.parse(scanner, depth + 1);
-      errors.addAll(result.errors);
 
       if (!result.successful) {
         if (parser is _Alt) {
@@ -53,7 +52,7 @@ class _Chain<T> extends ListParser<T> {
         }
 
         if (failFast) {
-          return new ParseResult(this, false, errors);
+          return new ParseResult(this, false, result.errors);
         }
 
         successful = false;

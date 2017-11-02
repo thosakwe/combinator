@@ -20,38 +20,41 @@ Parser jsonGrammar() {
 
   // Parse an array
   var arrayMembers = chain([
-    expr.then(match(',')).map((r) => r.value[0]).star(),
+    expr.then(match(',').space()).map((r) => r.value[0]).star(),
     expr,
   ]);
 
   var array = chain([
-    match('['),
+    match('[').space(),
     arrayMembers.opt(),
-    match(']'),
+    match(']').space(),
   ]).value((r) => r.value[1]);
 
   // KV pair
   var keyValuePair = chain([
-    string,
-    match(':'),
+    string.space(),
+    match(':').space(),
     expr.error(errorMessage: 'Missing expression.'),
   ]).castDynamic().cast<Map>().value((r) => {r.value[0]: r.value[2]});
 
   // Parse an object
   var object = chain([
-    match('{'),
-    keyValuePair.error(errorMessage: 'Missing key-value pair.'),
-    match('}').error(),
+    match('{').space(),
+    keyValuePair.space().error(errorMessage: 'Missing key-value pair.'),
+    match('}').space().error(),
   ]).value((r) => [r.value[1]]);
 
-  expr.parser = any([
-    object,
-    array,
-    number,
-    string,
-  ], errorMessage: 'Expected a JSON expression.');
+  expr.parser = any(
+    [
+      array,
+      number,
+      string,
+      object.error(),
+    ],
+    errorMessage: false,
+  ).space();
 
-  return expr;
+  return expr.foldErrors();
 }
 
 main() {

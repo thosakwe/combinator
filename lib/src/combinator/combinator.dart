@@ -9,6 +9,7 @@ part 'cast.dart';
 part 'chain.dart';
 part 'check.dart';
 part 'compare.dart';
+part 'fold_errors.dart';
 part 'index.dart';
 part 'longest.dart';
 part 'map.dart';
@@ -41,6 +42,9 @@ abstract class Parser<T> {
   /// Binds an [errorMessage] to a copy of this parser.
   Parser<T> error({String errorMessage}) => new _Alt<T>(this, errorMessage);
 
+  /// Removes multiple errors that occur in the same spot; this can reduce noise in parser output.
+  Parser<T> foldErrors() => new _FoldErrors<T>(this);
+
   Parser<U> map<U>(U Function(ParseResult<T>) f) {
     return new _Map<T, U>(this, f);
   }
@@ -58,10 +62,17 @@ abstract class Parser<T> {
   Parser<T> safe({bool backtrack: true, String errorMessage}) =>
       new _Safe<T>(this, backtrack, errorMessage);
 
+  /// Consumes any trailing whitespace.
+  Parser<T> space() => trail(new RegExp(r'[ \n\r\t]+'));
+
   ListParser<T> star({bool backtrack: true}) =>
       times(1, exact: false).opt(backtrack: backtrack);
 
-  Parser<List<U>> then<U>(Parser other) => chain<U>([this, other]);
+  ListParser<U> then<U>(Parser other) => chain<U>([this, other]);
+
+  /// Consumes and ignores any trailing occurrences of [pattern].
+  Parser<T> trail(Pattern pattern) =>
+      then(match(pattern).opt()).first().cast<T>();
 
   /// Expect this pattern a certain number of times.
   ///

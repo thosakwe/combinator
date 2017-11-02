@@ -4,16 +4,17 @@ part of lex.src.combinator;
 ///
 /// If [backtrack] is `true` (default), a failed parse will not modify the scanner state.
 ///
-/// You can provide a custom [errorMessage].
+/// You can provide a custom [errorMessage]. You can set it to `false` to not
+/// generate any error at all.
 Parser<T> any<T>(Iterable<Parser<T>> parsers,
-    {bool backtrack: true, String errorMessage}) {
+    {bool backtrack: true,  errorMessage}) {
   return new _Any(parsers, backtrack != false, errorMessage);
 }
 
 class _Any<T> extends Parser<T> {
   final Iterable<Parser<T>> parsers;
   final bool backtrack;
-  final String errorMessage;
+  final  errorMessage;
 
   _Any(this.parsers, this.backtrack, this.errorMessage);
 
@@ -42,18 +43,21 @@ class _Any<T> extends Parser<T> {
               ),
             );
           }
-            errors.addAll(result.errors);
+
+          errors.addAll(result.errors);
         }
       }
     }
 
-    errors.add(
-      new SyntaxError(
-        SyntaxErrorSeverity.error,
-        errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
-        scanner.emptySpan,
-      ),
-    );
+    if (errorMessage != false) {
+      errors.add(
+        new SyntaxError(
+          SyntaxErrorSeverity.error,
+          errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
+          scanner.emptySpan,
+        ),
+      );
+    }
 
     return new ParseResult(this, false, errors);
   }

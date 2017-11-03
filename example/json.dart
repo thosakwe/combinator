@@ -40,7 +40,7 @@ Parser jsonGrammar() {
   // Parse an object
   var object = chain([
     match('{').space(),
-    keyValuePair.space().error(errorMessage: 'Missing key-value pair.'),
+    keyValuePair.space().separatedBy(match(',')).error(errorMessage: 'Missing key-value pair.'),
     match('}').space().error(),
   ]).value((r) => [r.value[1]]);
 

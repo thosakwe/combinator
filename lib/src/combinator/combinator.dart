@@ -68,6 +68,16 @@ abstract class Parser<T> {
   Parser<T> safe({bool backtrack: true, String errorMessage}) =>
       new _Safe<T>(this, backtrack, errorMessage);
 
+  Parser<List<T>> separatedBy(Parser other) {
+    var trailed = then(other).map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
+    var leading = trailed.star();
+    return leading.then(this).map((r) {
+      var preceding = r.value[0] ?? [];
+      var out = new List<T>.from(preceding);
+      return out..add(r.value[1]);
+    });
+  }
+
   /// Consumes any trailing whitespace.
   Parser<T> space() => trail(new RegExp(r'[ \n\r\t]+'));
 
@@ -114,7 +124,14 @@ abstract class ListParser<T> extends Parser<List<T>> {
   ListParser<T> sort(Comparator<T> compare) => new _Compare(this, compare);
 
   @override
+  ListParser<U> map<U>(U Function(ParseResult<T>) f) {
+    return new _ListMap<T, U>(this, f);
+  }
+
+  @override
   ListParser<T> opt({bool backtrack: true}) => new _ListOpt(this, backtrack);
+
+  ListParser<T> where(bool Function(T) f) => map<List<T>>((r) => r.value.where(f).toList());
 }
 
 class ParseResult<T> {

@@ -18,6 +18,12 @@ class _Map<T, U> extends Parser<U> {
     );
   }
 }
+class _ListMap<T, U> extends _Map<T, U> implements ListParser<U> {
+  final Parser<T> parser;
+  final U Function(ParseResult<T>) f;
+
+  _ListMap(this.parser, this.f):super(parser, f);
+}
 
 
 class _Change<T, U> extends Parser<U> {

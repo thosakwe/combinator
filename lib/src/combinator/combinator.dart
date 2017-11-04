@@ -5,6 +5,7 @@ import 'package:source_span/source_span.dart';
 import 'package:string_scanner/string_scanner.dart';
 import '../error.dart';
 part 'any.dart';
+part 'advance.dart';
 part 'cast.dart';
 part 'chain.dart';
 part 'check.dart';
@@ -25,6 +26,11 @@ part 'value.dart';
 
 abstract class Parser<T> {
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]);
+
+  /// Skips forward a certain amount of steps after parsing, if it was successful.
+  Parser<T> forward(int amount) => new _Advance<T>(this, amount);
+
+  Parser<T> back(int amount) => new _Advance<T>(this, amount * -1);
 
   Parser<U> cast<U extends T>() => new _Cast<T, U>(this);
 
@@ -47,7 +53,7 @@ abstract class Parser<T> {
   Parser<T> foldErrors() => new _FoldErrors<T>(this);
 
   Parser<U> map<U>(U Function(ParseResult<T>) f) {
-    return new _Map<T, U>(this, f);
+    return new _Mapp<T, U>(this, f);
   }
 
   /// Prevents recursion past a certain [depth], preventing stack overflow errors.
@@ -71,10 +77,12 @@ abstract class Parser<T> {
   Parser<List<T>> separatedBy(Parser other) {
     var trailed = then(other).map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
     var leading = trailed.star();
-    return leading.then(this).map((r) {
+    return leading.back(1).then(opt()).map((r) {
       var preceding = r.value[0] ?? [];
       var out = new List<T>.from(preceding);
-      return out..add(r.value[1]);
+      if (r.value[1] != null)
+        out.add(r.value[1]);
+      return out;
     });
   }
 
@@ -82,7 +90,7 @@ abstract class Parser<T> {
   Parser<T> space() => trail(new RegExp(r'[ \n\r\t]+'));
 
   ListParser<T> star({bool backtrack: true}) =>
-      times(1, exact: false).opt(backtrack: backtrack);
+      times(1, exact: false, backtrack: backtrack);
 
   ListParser<U> then<U>(Parser other) => chain<U>([this, other]);
 
@@ -97,8 +105,8 @@ abstract class Parser<T> {
   ///
   /// You can provide custom error messages for when there are [tooFew] or [tooMany] occurrences.
   ListParser<T> times(int count,
-      {bool exact: true, String tooFew, String tooMany}) {
-    return new _Repeat<T>(this, count, exact, tooFew, tooMany);
+      {bool exact: true, String tooFew, String tooMany, bool backtrack: true}) {
+    return new _Repeat<T>(this, count, exact, tooFew, tooMany, backtrack);
   }
 
   /// Produces an optional copy of this parser.

@@ -1,4 +1,10 @@
 name: combinator
+version: 1.0.0-beta
+description: Parser combinators that support static typing, file spans, and more.
+author: Tobe O <thosakwe@gmail.com>
+homepage: https://github.com/thosakwe/combinator.git
+environment:
+  sdk: ">=1.19.0"
 dependencies:
   matcher: ^0.12.0
   source_span: ^1.0.0

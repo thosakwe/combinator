@@ -74,6 +74,9 @@ abstract class Parser<T> {
   Parser<T> safe({bool backtrack: true, String errorMessage}) =>
       new _Safe<T>(this, backtrack, errorMessage);
 
+  /// Expects to see an infinite amounts of the pattern, separated by the [other] pattern.
+  ///
+  /// Use this as a shortcut to parse arrays, parameter lists, etc.
   ListParser<T> separatedBy(Parser other) {
     var trailed = then(other).map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
     var leading = trailed.star(backtrack: true).opt();
@@ -84,6 +87,18 @@ abstract class Parser<T> {
         out.add(r.value[1]);
       return out;
     });
+  }
+
+  /// Expects to see the pattern, surrounded by the others.
+  ///
+  /// If no [right] is provided, it expects to see the same pattern on both sides.
+  /// Use this parse things like parenthesized expressions, arrays, etc.
+  Parser<T> surroundedBy(Parser left, [Parser right]) {
+    return chain([
+      left,
+      this,
+      right ?? left,
+    ]).index(1).castDynamic().cast<T>();
   }
 
   /// Consumes any trailing whitespace.

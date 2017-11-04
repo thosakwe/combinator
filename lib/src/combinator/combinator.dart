@@ -74,10 +74,10 @@ abstract class Parser<T> {
   Parser<T> safe({bool backtrack: true, String errorMessage}) =>
       new _Safe<T>(this, backtrack, errorMessage);
 
-  Parser<List<T>> separatedBy(Parser other) {
+  ListParser<T> separatedBy(Parser other) {
     var trailed = then(other).map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
-    var leading = trailed.star();
-    return leading.back(1).then(opt()).map((r) {
+    var leading = trailed.star(backtrack: true).opt();
+    return leading.then(opt()).map((r) {
       var preceding = r.value[0] ?? [];
       var out = new List<T>.from(preceding);
       if (r.value[1] != null)

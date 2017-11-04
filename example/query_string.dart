@@ -1,3 +1,5 @@
+// For some reason, this cannot be run in checked mode???
+
 import 'dart:io';
 import 'package:combinator/combinator.dart';
 import 'package:string_scanner/string_scanner.dart';
@@ -8,7 +10,7 @@ final Parser<String> key =
 
 final Parser value = key.map((r) => Uri.decodeQueryComponent(r.value));
 
-final Parser<Map> pair = chain([
+final Parser pair = chain([
   key,
   match('='),
   value,
@@ -18,21 +20,10 @@ final Parser<Map> pair = chain([
   };
 });
 
-final Parser<Map> leadingPair =
-    pair.then(match('&')).map<Map>((r) => r.value[0]);
 
-final Parser<Map> leadingPairs =
-    leadingPair.star().reduce((a, b) => (a ?? {})..addAll(b ?? {}));
+final Parser pairs = pair.separatedBy(match(r'&')).reduce((a, b) => a..addAll(b));
 
-final Parser<Map> pairs = chain([
-  leadingPairs.opt(backtrack: false),
-  pair,
-]).map((r) {
-  var leading = r.value[0] ?? {};
-  return leading..addAll(r.value[1]);
-});
-
-final Parser<Map> queryString = pairs.opt();
+final Parser queryString = pairs.opt();
 
 main() {
   while (true) {

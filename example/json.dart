@@ -19,14 +19,9 @@ Parser jsonGrammar() {
   );
 
   // Parse an array
-  var arrayMembers = chain([
-    expr.then(match(',').space()).map((r) => r.value[0]).star(),
-    expr,
-  ]);
-
   var array = chain([
     match('[').space(),
-    arrayMembers.opt(),
+    expr.space().separatedBy(match(',').space()).opt(),
     match(']').space(),
   ]).value((r) => r.value[1]);
 
@@ -40,7 +35,7 @@ Parser jsonGrammar() {
   // Parse an object
   var object = chain([
     match('{').space(),
-    keyValuePair.space().separatedBy(match(',')).error(errorMessage: 'Missing key-value pair.'),
+    keyValuePair.space().separatedBy(match(',').space()).error(errorMessage: 'Missing key-value pair.'),
     match('}').space().error(),
   ]).value((r) => [r.value[1]]);
 
@@ -73,5 +68,6 @@ main() {
       }
     } else
       print(result.value);
+      print(result.value.runtimeType);
   }
 }

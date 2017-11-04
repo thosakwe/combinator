@@ -1,3 +1,5 @@
+// https://github.com/dart-lang/sdk/issues/31283
+
 import 'dart:io';
 import 'package:combinator/combinator.dart';
 import 'package:string_scanner/string_scanner.dart';
@@ -43,7 +45,7 @@ Parser<num> calculatorGrammar() {
   expr.parser = longest([
     number,
     parenthesizedExpression,
-    binaryExpression,//.safe(errorMessage: 'wtf lol'),
+    binaryExpression,
   ]);
 
   return expr;

@@ -8,19 +8,21 @@ Parser xmlGrammar() {
   final Parser<String> key = match(new RegExp(r'([A-Za-z]+-)*[A-Za-z]+'),
           errorMessage: 'Expected a key.')
       .value((r) => r.span.text);
+
   final Parser<String> string =
       match(new RegExp(r'"[^"]*"'), errorMessage: 'Expected a string.').value(
     (r) => r.span.text.substring(1, r.span.text.length - 1),
   );
 
-  final Parser<Attribute> attribute = chain([
-    key,
-    match('='),
-    string,
-  ]).map<Attribute>((r) => new Attribute(r.value[0], r.value[2]));
+  final Parser<Attribute> attribute = chain([key, match('='), string])
+      .map<Attribute>((r) => new Attribute(r.value[0], r.value[2]));
 
-  final Parser leadingTag = chain(
-      [match('<'), key.space(), attribute.space().star().opt(), match('>')]);
+  final Parser leadingTag = chain([
+    match('<'),
+    key.space(),
+    attribute.space().star().opt(),
+    match('>'),
+  ]);
 
   Parser closingTag = chain([
     match('<'),
@@ -31,10 +33,7 @@ Parser xmlGrammar() {
 
   final Parser tag = reference();
 
-  var fullTag = chain([
-    leadingTag.space(),
-    closingTag,
-  ]).change((r) {
+  var fullTag = chain([leadingTag.space(), closingTag]).change((r) {
     var openingKey = r.value[0][1];
     var attrs = r.value[0][2];
     var closingKey = r.value[1][2];

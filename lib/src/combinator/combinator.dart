@@ -6,6 +6,7 @@ import 'package:string_scanner/string_scanner.dart';
 import '../error.dart';
 part 'any.dart';
 part 'advance.dart';
+part 'cache.dart';
 part 'cast.dart';
 part 'chain.dart';
 part 'check.dart';
@@ -63,6 +64,11 @@ abstract class Parser<T> {
   ///
   /// You can provide an [errorMessage].
   Parser<T> negate({String errorMessage}) => new _Negate<T>(this, errorMessage);
+
+  /// Caches the results of parse attempts at various locations within the source text.
+  ///
+  /// Use this to prevent excessive recursion.
+  Parser<T> => new _Cache<T>(this);
 
   Parser<T> or<U>(Parser other) => any<T>([this, other]);
 

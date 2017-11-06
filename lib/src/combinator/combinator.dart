@@ -93,7 +93,7 @@ abstract class Parser<T> {
       if (r.value[1] != null)
         out.add(r.value[1]);
       return out;
-    });
+    }).toList();
   }
 
   /// Expects to see the pattern, surrounded by the others.

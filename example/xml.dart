@@ -31,7 +31,7 @@ Parser xmlGrammar() {
     match('>'),
   ]);
 
-  final Parser tag = reference();
+  final Reference tag = reference();
 
   var fullTag = chain([leadingTag.space(), closingTag]).change((r) {
     var openingKey = r.value[0][1];

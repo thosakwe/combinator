@@ -23,6 +23,7 @@ part 'reduce.dart';
 part 'reference.dart';
 part 'repeat.dart';
 part 'safe.dart';
+part 'to_list.dart';
 part 'value.dart';
 
 abstract class Parser<T> {
@@ -68,7 +69,7 @@ abstract class Parser<T> {
   /// Caches the results of parse attempts at various locations within the source text.
   ///
   /// Use this to prevent excessive recursion.
-  Parser<T> => new _Cache<T>(this);
+  Parser<T> cache() => new _Cache<T>(this);
 
   Parser<T> or<U>(Parser other) => any<T>([this, other]);
 
@@ -115,6 +116,8 @@ abstract class Parser<T> {
 
   ListParser<U> then<U>(Parser other) => chain<U>([this, other]);
 
+  ListParser<T> toList() => new _ToList<T>(this);
+
   /// Consumes and ignores any trailing occurrences of [pattern].
   Parser<T> trail(Pattern pattern) =>
       then(match(pattern).opt()).first().cast<T>();
@@ -151,11 +154,6 @@ abstract class ListParser<T> extends Parser<List<T>> {
   Parser<T> reduce(T Function(T, T) combine) => new _Reduce<T>(this, combine);
 
   ListParser<T> sort(Comparator<T> compare) => new _Compare(this, compare);
-
-  @override
-  ListParser<U> map<U>(U Function(ParseResult<T>) f) {
-    return new _ListMap<T, U>(this, f);
-  }
 
   @override
   ListParser<T> opt({bool backtrack: true}) => new _ListOpt(this, backtrack);

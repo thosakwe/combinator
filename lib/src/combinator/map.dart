@@ -1,10 +1,10 @@
 part of lex.src.combinator;
 
-class _Mapp<T, U> extends Parser<U> {
+class _Map<T, U> extends Parser<U> {
   final Parser<T> parser;
   final U Function(ParseResult<T>) f;
 
-  _Mapp(this.parser, this.f);
+  _Map(this.parser, this.f);
 
   @override
   ParseResult<U> parse(SpanScanner scanner, [int depth = 1]) {

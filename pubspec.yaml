@@ -9,3 +9,5 @@ dependencies:
   matcher: ^0.12.0
   source_span: ^1.0.0
   string_scanner: ^1.0.0
+dev_dependencies:
+  test: ^0.12.0

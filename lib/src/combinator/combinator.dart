@@ -55,7 +55,7 @@ abstract class Parser<T> {
   Parser<T> foldErrors() => new _FoldErrors<T>(this);
 
   Parser<U> map<U>(U Function(ParseResult<T>) f) {
-    return new _Mapp<T, U>(this, f);
+    return new _Map<T, U>(this, f);
   }
 
   /// Prevents recursion past a certain [depth], preventing stack overflow errors.
@@ -91,9 +91,9 @@ abstract class Parser<T> {
       var preceding = r.value[0] ?? [];
       var out = new List<T>.from(preceding);
       if (r.value[1] != null)
-        out.add(r.value[1]);
+        out.addAll(r.value[1]);
       return out;
-    }).toList();
+    }).castDynamic().toList();
   }
 
   /// Expects to see the pattern, surrounded by the others.
@@ -171,7 +171,7 @@ class ParseResult<T> {
   ParseResult(this.parser, this.successful, this.errors,
       {this.span, this.value});
 
-  ParseResult change(
+  ParseResult<T> change(
       {Parser<T> parser,
       bool successful,
       Iterable<SyntaxError> errors,

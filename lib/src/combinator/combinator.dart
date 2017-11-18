@@ -73,6 +73,7 @@ abstract class Parser<T> {
 
   Parser<T> or<U>(Parser other) => any<T>([this, other]);
 
+  /// Parses this sequence one or more times.
   ListParser<T> plus() => times(1, exact: false);
 
   /// Safely escapes this parser when an error occurs.
@@ -153,6 +154,7 @@ abstract class ListParser<T> extends Parser<List<T>> {
 
   Parser<T> reduce(T Function(T, T) combine) => new _Reduce<T>(this, combine);
 
+  /// Sorts the parsed values, using the given [Comparator].
   ListParser<T> sort(Comparator<T> compare) => new _Compare(this, compare);
 
   @override

@@ -17,5 +17,6 @@ main() {
   test('reduce', () {
     var parser = numbers.reduce((a, b) => a + b);
     expect(parser.parse(scan('21,2,3,34,20')).value, 80);
+    expect(parser.parse(scan('not numbers')).value, isNull);
   });
 }

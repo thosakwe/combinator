@@ -1,8 +1,36 @@
 import 'package:combinator/combinator.dart';
+import 'package:matcher/matcher.dart';
 import 'package:test/test.dart';
 import 'common.dart';
 
 main() {
+  test('advance', () {
+    var scanner = scan('hello world');
+
+    // Casted -> dynamic just for the sake of coverage.
+    var parser = match('he').forward(2).castDynamic();
+    parser.parse(scanner);
+    expect(scanner.position, 4);
+  });
+
+  test('change', () {
+    var parser = match('hello').change((r) => r.change(value: 23));
+    expect(parser.parse(scan('helloworld')).value, 23);
+  });
+
+  test('check', () {
+    var parser = match<int>(new RegExp(r'[A-Za-z]+'))
+        .value((r) => r.span.length)
+        .check(greaterThan(3));
+    expect(parser.parse(scan('helloworld')).successful, isTrue);
+    expect(parser.parse(scan('yo')).successful, isFalse);
+  });
+
+  test('map', () {
+    var parser = match(new RegExp(r'[A-Za-z]+')).map<int>((r) => r.span.length);
+    expect(parser.parse(scan('hello')).value, 5);
+  });
+
   test('negate', () {
     var parser = match('hello').negate(errorMessage: 'world');
     expect(parser.parse(scan('goodbye world')).successful, isTrue);
@@ -33,4 +61,6 @@ main() {
       }
     });
   });
+
+  test('safe', () {});
 }

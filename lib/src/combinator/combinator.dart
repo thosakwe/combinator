@@ -24,6 +24,7 @@ part 'reference.dart';
 part 'repeat.dart';
 part 'safe.dart';
 part 'to_list.dart';
+part 'util.dart';
 part 'value.dart';
 
 abstract class Parser<T> {
@@ -45,14 +46,20 @@ abstract class Parser<T> {
   /// Validates the parse result against a [Matcher].
   ///
   /// You can provide a custom [errorMessage].
-  Parser<T> check(Matcher matcher, {String errorMessage}) =>
-      new _Check<T>(this, matcher, errorMessage);
+  Parser<T> check(Matcher matcher,
+          {String errorMessage, SyntaxErrorSeverity severity}) =>
+      new _Check<T>(
+          this, matcher, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
   /// Binds an [errorMessage] to a copy of this parser.
-  Parser<T> error({String errorMessage}) => new _Alt<T>(this, errorMessage);
+  Parser<T> error({String errorMessage, SyntaxErrorSeverity severity}) =>
+      new _Alt<T>(this, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
   /// Removes multiple errors that occur in the same spot; this can reduce noise in parser output.
-  Parser<T> foldErrors() => new _FoldErrors<T>(this);
+  Parser<T> foldErrors({bool equal(SyntaxError a, SyntaxError b)}) {
+    equal ??= (b, e) => b.span.start.offset == e.span.start.offset;
+    return new _FoldErrors<T>(this, equal);
+  }
 
   Parser<U> map<U>(U Function(ParseResult<T>) f) {
     return new _Map<T, U>(this, f);
@@ -64,7 +71,8 @@ abstract class Parser<T> {
   /// Ensures this pattern is not matched.
   ///
   /// You can provide an [errorMessage].
-  Parser<T> negate({String errorMessage}) => new _Negate<T>(this, errorMessage);
+  Parser<T> negate({String errorMessage, SyntaxErrorSeverity severity}) =>
+      new _Negate<T>(this, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
   /// Caches the results of parse attempts at various locations within the source text.
   ///
@@ -79,22 +87,26 @@ abstract class Parser<T> {
   /// Safely escapes this parser when an error occurs.
   ///
   /// The generated parser only runs once; repeated uses always exit eagerly.
-  Parser<T> safe({bool backtrack: true, String errorMessage}) =>
-      new _Safe<T>(this, backtrack, errorMessage);
+  Parser<T> safe(
+          {bool backtrack: true,
+          String errorMessage,
+          SyntaxErrorSeverity severity}) =>
+      new _Safe<T>(
+          this, backtrack, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
   /// Expects to see an infinite amounts of the pattern, separated by the [other] pattern.
   ///
   /// Use this as a shortcut to parse arrays, parameter lists, etc.
-  ListParser<T> separatedBy(Parser other) {
-    var trailed = then(other).map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
+  Parser<List<T>> separatedBy(Parser other) {
+    var trailed = then(other)
+        .map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
     var leading = trailed.star(backtrack: true).opt();
     return leading.then(opt()).map((r) {
       var preceding = r.value[0] ?? [];
       var out = new List<T>.from(preceding);
-      if (r.value[1] != null)
-        out.addAll(r.value[1]);
+      if (r.value[1] != null) out.add(r.value[1]);
       return out;
-    }).castDynamic().toList();
+    });
   }
 
   /// Expects to see the pattern, surrounded by the others.
@@ -108,6 +120,9 @@ abstract class Parser<T> {
       right ?? left,
     ]).index(1).castDynamic().cast<T>();
   }
+
+  Parser<T> parenthesized() =>
+      surroundedBy(match('(').space(), match(')').space());
 
   /// Consumes any trailing whitespace.
   Parser<T> space() => trail(new RegExp(r'[ \n\r\t]+'));
@@ -130,8 +145,13 @@ abstract class Parser<T> {
   ///
   /// You can provide custom error messages for when there are [tooFew] or [tooMany] occurrences.
   ListParser<T> times(int count,
-      {bool exact: true, String tooFew, String tooMany, bool backtrack: true}) {
-    return new _Repeat<T>(this, count, exact, tooFew, tooMany, backtrack);
+      {bool exact: true,
+      String tooFew,
+      String tooMany,
+      bool backtrack: true,
+      SyntaxErrorSeverity severity}) {
+    return new _Repeat<T>(this, count, exact, tooFew, tooMany, backtrack,
+        severity ?? SyntaxErrorSeverity.error);
   }
 
   /// Produces an optional copy of this parser.
@@ -160,7 +180,11 @@ abstract class ListParser<T> extends Parser<List<T>> {
   @override
   ListParser<T> opt({bool backtrack: true}) => new _ListOpt(this, backtrack);
 
-  ListParser<T> where(bool Function(T) f) => map<List<T>>((r) => r.value.where(f).toList());
+  ListParser<T> where(bool Function(T) f) =>
+      map<List<T>>((r) => r.value.where(f).toList());
+
+  /// Condenses a [ListParser] into having a value of the combined span's text.
+  Parser<String> flatten() => map<String>((r) => r.span.text);
 }
 
 class ParseResult<T> {

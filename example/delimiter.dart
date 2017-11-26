@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:combinator/combinator.dart';
 import 'package:string_scanner/string_scanner.dart';
 
-final Parser<String> id = match(new RegExp(r'[A-Za-z]+')).value((r) => r.span.text);
+final Parser<String> id =
+    match(new RegExp(r'[A-Za-z]+')).value((r) => r.span.text);
 
 main() {
   while (true) {

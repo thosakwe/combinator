@@ -10,7 +10,7 @@ class SyntaxError extends Error {
 
   String get toolString {
     if (_toolString != null) return _toolString;
-    var type = severity == SyntaxErrorSeverity.warning ? 'warning': 'error';
+    var type = severity == SyntaxErrorSeverity.warning ? 'warning' : 'error';
     return _toolString = '$type: ${span.start.toolString}: $message';
   }
 }

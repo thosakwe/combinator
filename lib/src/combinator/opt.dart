@@ -11,8 +11,7 @@ class _Opt<T> extends Parser<T> {
     var replay = scanner.position;
     var result = parser.parse(scanner, depth + 1);
 
-    if (!result.successful)
-      scanner.position = replay;
+    if (!result.successful) scanner.position = replay;
 
     return result.change(parser: this, successful: true);
   }
@@ -29,8 +28,7 @@ class _ListOpt<T> extends ListParser<T> {
     var replay = scanner.position;
     var result = parser.parse(scanner, depth + 1);
 
-    if (!result.successful)
-      scanner.position = replay;
+    if (!result.successful) scanner.position = replay;
 
     return result.change(parser: this, successful: true);
   }

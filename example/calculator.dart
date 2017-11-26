@@ -8,7 +8,8 @@ final Parser<num> calculator = calculatorGrammar();
 
 Parser<num> calculatorGrammar() {
   var expr = reference<num>();
-  var number = match(new RegExp(r'-?[0-9]+(\.[0-9]+)?')).value((r) => num.parse(r.span.text));
+  var number = match(new RegExp(r'-?[0-9]+(\.[0-9]+)?'))
+      .value((r) => num.parse(r.span.text));
   var binaryOperator = any([
     match('*'),
     match('/'),
@@ -22,7 +23,8 @@ Parser<num> calculatorGrammar() {
   ]).index(1).cast<num>();
 
   var binaryExpression = chain([
-    expr.maxDepth(100), // Use maxDepth(...) to prevent stack overflows on left-recursive rules
+    expr.maxDepth(
+        100), // Use maxDepth(...) to prevent stack overflows on left-recursive rules
     binaryOperator,
     expr,
   ]).map((r) {

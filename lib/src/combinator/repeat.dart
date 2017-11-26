@@ -5,8 +5,10 @@ class _Repeat<T> extends ListParser<T> {
   final int count;
   final bool exact, backtrack;
   final String tooFew, tooMany;
+  final SyntaxErrorSeverity severity;
 
-  _Repeat(this.parser, this.count, this.exact, this.tooFew, this.tooMany, this.backtrack);
+  _Repeat(this.parser, this.count, this.exact, this.tooFew, this.tooMany,
+      this.backtrack, this.severity);
 
   @override
   ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
@@ -31,23 +33,21 @@ class _Repeat<T> extends ListParser<T> {
       errors.addAll(result.errors);
       errors.add(
         new SyntaxError(
-          SyntaxErrorSeverity.error,
+          severity,
           tooFew ?? 'Expected at least $count occurence(s).',
           result.span ?? scanner.emptySpan,
         ),
       );
 
-      if (backtrack)
-        scanner.position = replay;
+      if (backtrack) scanner.position = replay;
 
       return new ParseResult<List<T>>(this, false, errors);
     } else if (success > count && exact) {
-      if (backtrack)
-        scanner.position = replay;
+      if (backtrack) scanner.position = replay;
 
       return new ParseResult<List<T>>(this, false, [
         new SyntaxError(
-          SyntaxErrorSeverity.error,
+          severity,
           tooMany ?? 'Expected no more than $count occurence(s).',
           result.span ?? scanner.emptySpan,
         ),

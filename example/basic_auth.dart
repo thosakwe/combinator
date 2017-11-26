@@ -15,11 +15,9 @@ final Parser credentials = chain([
 ]).map((r) => {'username': r.value[0], 'password': r.value[2]});
 
 // A parser nested within another?
-final Parser credentialString =
-    match(new RegExp(r'([^\n$]+)'), errorMessage: 'Expected a credential string.')
-        .value((r) {
-  var decoded = UTF8
-      .decode(BASE64URL.decode(r.span.text));
+final Parser credentialString = match(new RegExp(r'([^\n$]+)'),
+    errorMessage: 'Expected a credential string.').value((r) {
+  var decoded = UTF8.decode(BASE64URL.decode(r.span.text));
   var scanner = new SpanScanner(decoded);
   return credentials.parse(scanner).value;
 });

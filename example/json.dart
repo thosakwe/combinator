@@ -35,7 +35,10 @@ Parser jsonGrammar() {
   // Parse an object
   var object = chain([
     match('{').space(),
-    keyValuePair.space().separatedBy(match(',').space()).error(errorMessage: 'Missing key-value pair.'),
+    keyValuePair
+        .space()
+        .separatedBy(match(',').space())
+        .error(errorMessage: 'Missing key-value pair.'),
     match('}').space().error(),
   ]).value((r) => [r.value[1]]);
 
@@ -47,7 +50,8 @@ Parser jsonGrammar() {
       object.error(),
     ],
     errorMessage: false,
-  ).space();
+  )
+      .space();
 
   return expr.foldErrors();
 }
@@ -68,6 +72,6 @@ main() {
       }
     } else
       print(result.value);
-      print(result.value.runtimeType);
+    print(result.value.runtimeType);
   }
 }

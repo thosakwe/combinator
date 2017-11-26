@@ -7,16 +7,18 @@ part of lex.src.combinator;
 /// You can provide a custom [errorMessage]. You can set it to `false` to not
 /// generate any error at all.
 Parser<T> any<T>(Iterable<Parser<T>> parsers,
-    {bool backtrack: true,  errorMessage}) {
-  return new _Any(parsers, backtrack != false, errorMessage);
+    {bool backtrack: true, errorMessage, SyntaxErrorSeverity severity}) {
+  return new _Any(parsers, backtrack != false, errorMessage,
+      severity ?? SyntaxErrorSeverity.error);
 }
 
 class _Any<T> extends Parser<T> {
   final Iterable<Parser<T>> parsers;
   final bool backtrack;
-  final  errorMessage;
+  final errorMessage;
+  final SyntaxErrorSeverity severity;
 
-  _Any(this.parsers, this.backtrack, this.errorMessage);
+  _Any(this.parsers, this.backtrack, this.errorMessage, this.severity);
 
   @override
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
@@ -30,29 +32,14 @@ class _Any<T> extends Parser<T> {
         return result;
       else {
         if (backtrack) scanner.position = replay;
-
-        if (parser is _Alt) {
-          var alt = parser as _Alt;
-
-          if (alt.errorMessage != null) {
-            errors.add(
-              new SyntaxError(
-                SyntaxErrorSeverity.error,
-                alt.errorMessage,
-                result.span ?? scanner.lastSpan ?? scanner.emptySpan,
-              ),
-            );
-          }
-
-          errors.addAll(result.errors);
-        }
+        if (parser is _Alt) errors.addAll(result.errors);
       }
     }
 
     if (errorMessage != false) {
       errors.add(
         new SyntaxError(
-          SyntaxErrorSeverity.error,
+          severity,
           errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
           scanner.emptySpan,
         ),

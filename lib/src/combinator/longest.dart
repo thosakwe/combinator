@@ -4,15 +4,17 @@ part of lex.src.combinator;
 ///
 /// You can provide a custom [errorMessage].
 Parser<T> longest<T>(Iterable<Parser<T>> parsers,
-    {String errorMessage}) {
-  return new _Longest(parsers, errorMessage);
+    {String errorMessage, SyntaxErrorSeverity severity}) {
+  return new _Longest(
+      parsers, errorMessage, severity ?? SyntaxErrorSeverity.error);
 }
 
 class _Longest<T> extends Parser<T> {
   final Iterable<Parser<T>> parsers;
   final String errorMessage;
+  final SyntaxErrorSeverity severity;
 
-  _Longest(this.parsers, this.errorMessage);
+  _Longest(this.parsers, this.errorMessage, this.severity);
 
   @override
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
@@ -25,22 +27,7 @@ class _Longest<T> extends Parser<T> {
 
       if (result.successful)
         results.add(result);
-      else {
-        if (parser is _Alt) {
-          var alt = parser as _Alt;
-
-          if (alt.errorMessage != null) {
-            errors.add(
-              new SyntaxError(
-                SyntaxErrorSeverity.error,
-                alt.errorMessage,
-                result.span ?? scanner.lastSpan ?? scanner.emptySpan,
-              ),
-            );
-          }
-          errors.addAll(result.errors);
-        }
-      }
+      else if (parser is _Alt) errors.addAll(result.errors);
 
       scanner.position = replay;
     }
@@ -53,7 +40,7 @@ class _Longest<T> extends Parser<T> {
 
     errors.add(
       new SyntaxError(
-        SyntaxErrorSeverity.error,
+        severity,
         errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
         scanner.emptySpan,
       ),

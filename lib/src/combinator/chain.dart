@@ -3,27 +3,37 @@ part of lex.src.combinator;
 /// Expects to parse a sequence of [parsers].
 ///
 /// If [failFast] is `true` (default), then the first failure to parse will abort the parse.
-ListParser<T> chain<T>(Iterable<Parser> parsers, {bool failFast: true}) {
-  return new _Chain<T>(parsers, failFast != false);
+ListParser<T> chain<T>(Iterable<Parser> parsers,
+    {bool failFast: true, SyntaxErrorSeverity severity}) {
+  return new _Chain<T>(
+      parsers, failFast != false, severity ?? SyntaxErrorSeverity.error);
 }
 
 class _Alt<T> extends Parser<T> {
   final Parser<T> parser;
   final String errorMessage;
+  final SyntaxErrorSeverity severity;
 
-  _Alt(this.parser, this.errorMessage);
+  _Alt(this.parser, this.errorMessage, this.severity);
 
   @override
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    return parser.parse(scanner, depth + 1);
+    var result = parser.parse(scanner, depth + 1);
+    return result.successful
+        ? result
+        : result.addErrors([
+            new SyntaxError(severity ?? SyntaxErrorSeverity.error, errorMessage,
+                result.span ?? scanner.emptySpan),
+          ]);
   }
 }
 
 class _Chain<T> extends ListParser<T> {
   final Iterable<Parser<T>> parsers;
   final bool failFast;
+  final SyntaxErrorSeverity severity;
 
-  _Chain(this.parsers, this.failFast);
+  _Chain(this.parsers, this.failFast, this.severity);
 
   @override
   ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
@@ -36,20 +46,7 @@ class _Chain<T> extends ListParser<T> {
       var result = parser.parse(scanner, depth + 1);
 
       if (!result.successful) {
-        if (parser is _Alt) {
-          var alt = parser as _Alt;
-
-          if (alt.errorMessage != null) {
-            errors.add(
-              new SyntaxError(
-                SyntaxErrorSeverity.error,
-                alt.errorMessage,
-                result.span ?? scanner.lastSpan ?? scanner.emptySpan,
-              ),
-            );
-          } else
-            errors.addAll(result.errors);
-        }
+        if (parser is _Alt) errors.addAll(result.errors);
 
         if (failFast) {
           return new ParseResult(this, false, result.errors);

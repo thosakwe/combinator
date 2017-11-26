@@ -4,8 +4,9 @@ class _Check<T> extends Parser<T> {
   final Parser<T> parser;
   final Matcher matcher;
   final String errorMessage;
+  final SyntaxErrorSeverity severity;
 
-  _Check(this.parser, this.matcher, this.errorMessage);
+  _Check(this.parser, this.matcher, this.errorMessage, this.severity);
 
   @override
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
@@ -16,7 +17,7 @@ class _Check<T> extends Parser<T> {
     else if (!matcher.matches(result.value, matchState)) {
       return result.change(successful: false).addErrors([
         new SyntaxError(
-          SyntaxErrorSeverity.error,
+          severity,
           errorMessage ??
               matcher.describe(new StringDescription('Expected ')).toString() +
                   '.',

@@ -3,8 +3,9 @@ part of lex.src.combinator;
 class _Negate<T> extends Parser<T> {
   final Parser<T> parser;
   final String errorMessage;
+  final SyntaxErrorSeverity severity;
 
-  _Negate(this.parser, this.errorMessage);
+  _Negate(this.parser, this.errorMessage, this.severity);
 
   @override
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
@@ -25,7 +26,7 @@ class _Negate<T> extends Parser<T> {
     if (errorMessage != null) {
       result = result.addErrors([
         new SyntaxError(
-          SyntaxErrorSeverity.error,
+          severity,
           errorMessage,
           result.span,
         ),

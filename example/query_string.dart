@@ -20,8 +20,9 @@ final Parser pair = chain([
   };
 });
 
-
-final Parser pairs = pair.separatedBy(match(r'&')).reduce((a, b) => a..addAll(b));
+final Parser pairs = pair
+    .separatedBy(match(r'&'))
+    .map((r) => r.value.reduce((a, b) => a..addAll(b)));
 
 final Parser queryString = pairs.opt();
 

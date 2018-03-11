@@ -35,4 +35,11 @@ class _Negate<T> extends Parser<T> {
 
     return result;
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('negate (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

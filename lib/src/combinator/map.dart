@@ -17,6 +17,13 @@ class _Map<T, U> extends Parser<U> {
       value: result.successful ? f(result) : null,
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('map<$U> (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }
 
 class _Change<T, U> extends Parser<U> {
@@ -28,5 +35,12 @@ class _Change<T, U> extends Parser<U> {
   @override
   ParseResult<U> parse(SpanScanner scanner, [int depth = 1]) {
     return f(parser.parse(scanner, depth + 1)).change(parser: this);
+  }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('change($f) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
   }
 }

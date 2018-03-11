@@ -5,7 +5,7 @@ class _Safe<T> extends Parser<T> {
   final bool backtrack;
   final String errorMessage;
   final SyntaxErrorSeverity severity;
-  bool _triggered;
+  bool _triggered =false;
 
   _Safe(this.parser, this.backtrack, this.errorMessage, this.severity);
 
@@ -34,5 +34,13 @@ class _Safe<T> extends Parser<T> {
 
       return new ParseResult<T>(this, false, errors);
     }
+  }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    var t = _triggered ? 'triggered' : 'not triggered';
+    buffer..writeln('safe($t) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
   }
 }

@@ -22,4 +22,11 @@ class _Index<T> extends Parser<T> {
       value: value,
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('index($index) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

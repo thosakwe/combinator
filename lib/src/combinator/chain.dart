@@ -26,6 +26,11 @@ class _Alt<T> extends Parser<T> {
                 result.span ?? scanner.emptySpan),
           ]);
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    parser.stringify(buffer);
+  }
 }
 
 class _Chain<T> extends ListParser<T> {
@@ -73,5 +78,19 @@ class _Chain<T> extends ListParser<T> {
       span: span,
       value: new List<T>.unmodifiable(results),
     );
+  }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('chain(${parsers.length}) (')..indent();
+    int i = 1;
+
+    for (var parser in parsers) {
+      buffer..writeln('#${i++}:')..indent();
+      parser.stringify(buffer);
+      buffer.outdent();
+    }
+
+    buffer..outdent()..writeln(')');
   }
 }

@@ -27,4 +27,11 @@ class _Reduce<T> extends Parser<T> {
       value: result.value.isEmpty ? null : result.value.reduce(combine),
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('reduce($combine) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

@@ -14,4 +14,11 @@ class _MaxDepth<T> extends Parser<T> {
 
     return parser.parse(scanner, depth + 1);
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('max depth($cap) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

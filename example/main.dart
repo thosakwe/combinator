@@ -19,6 +19,8 @@ final Parser number =
     minus.opt().then(decimal).map<num>((r) => num.parse(r.span.text));
 
 main() {
+  print(number);
+
   while (true) {
     stdout.write('Enter a number: ');
     var line = stdin.readLineSync();

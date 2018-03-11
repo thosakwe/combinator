@@ -12,4 +12,11 @@ class _Advance<T> extends Parser<T> {
     if (result.successful) scanner.position += amount;
     return result;
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('advance($amount) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

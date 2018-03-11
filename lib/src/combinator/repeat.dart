@@ -63,4 +63,14 @@ class _Repeat<T> extends ListParser<T> {
       value: results,
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    var r = new StringBuffer('{$count');
+    if (!exact) r.write(',');
+    r.write('}');
+    buffer..writeln('repeat($r) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

@@ -58,6 +58,7 @@ Parser jsonGrammar() {
 
 main() {
   var JSON = jsonGrammar();
+  print(JSON);
 
   while (true) {
     stdout.write('Enter some JSON: ');

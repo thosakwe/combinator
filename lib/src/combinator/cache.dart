@@ -12,4 +12,11 @@ class _Cache<T> extends Parser<T> {
       return parser.parse(scanner, depth + 1);
     }).change(parser: this);
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('cache(${_cache.length}) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

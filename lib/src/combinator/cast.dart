@@ -16,6 +16,13 @@ class _Cast<T, U extends T> extends Parser<U> {
       value: result.value,
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('cast<$U> (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }
 
 class _CastDynamic<T> extends Parser<dynamic> {
@@ -33,5 +40,12 @@ class _CastDynamic<T> extends Parser<dynamic> {
       span: result.span,
       value: result.value,
     );
+  }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('cast<dynamic> (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
   }
 }

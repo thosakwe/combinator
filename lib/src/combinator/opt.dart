@@ -15,6 +15,13 @@ class _Opt<T> extends Parser<T> {
 
     return result.change(parser: this, successful: true);
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('optional (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }
 
 class _ListOpt<T> extends ListParser<T> {
@@ -31,5 +38,12 @@ class _ListOpt<T> extends ListParser<T> {
     if (!result.successful) scanner.position = replay;
 
     return result.change(parser: this, successful: true);
+  }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('optional (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
   }
 }

@@ -48,4 +48,18 @@ class _Any<T> extends Parser<T> {
 
     return new ParseResult(this, false, errors);
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('any(${parsers.length}) (')..indent();
+    int i = 1;
+
+    for (var parser in parsers) {
+      buffer..writeln('#${i++}:')..indent();
+      parser.stringify(buffer);
+      buffer.outdent();
+    }
+
+    buffer..outdent()..writeln(')');
+  }
 }

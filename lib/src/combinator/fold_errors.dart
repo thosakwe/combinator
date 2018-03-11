@@ -15,4 +15,11 @@ class _FoldErrors<T> extends Parser<T> {
     });
     return result.change(errors: errors);
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('fold errors (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

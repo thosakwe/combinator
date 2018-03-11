@@ -22,4 +22,11 @@ class _Compare<T> extends ListParser<T> {
       value: result.value..sort(compare),
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('sort($compare) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

@@ -1,44 +1,76 @@
 library lex.src.combinator;
 
+import 'package:code_buffer/code_buffer.dart';
 import 'package:matcher/matcher.dart';
+import 'package:meta/meta.dart';
 import 'package:source_span/source_span.dart';
 import 'package:string_scanner/string_scanner.dart';
 import '../error.dart';
+
 part 'any.dart';
+
 part 'advance.dart';
+
 part 'cache.dart';
+
 part 'cast.dart';
+
 part 'chain.dart';
+
 part 'check.dart';
+
 part 'compare.dart';
+
 part 'fold_errors.dart';
+
 part 'index.dart';
+
 part 'longest.dart';
+
 part 'map.dart';
+
 part 'match.dart';
+
 part 'max_depth.dart';
+
 part 'negate.dart';
+
 part 'opt.dart';
+
+part 'recursion.dart';
+
 part 'reduce.dart';
+
 part 'reference.dart';
+
 part 'repeat.dart';
+
 part 'safe.dart';
+
 part 'to_list.dart';
+
 part 'util.dart';
+
 part 'value.dart';
 
+/// A parser combinator, which can parse very complicated grammars in a manageable manner.
 abstract class Parser<T> {
+  /// Parses text from a [SpanScanner].
   ParseResult<T> parse(SpanScanner scanner, [int depth = 1]);
 
   /// Skips forward a certain amount of steps after parsing, if it was successful.
   Parser<T> forward(int amount) => new _Advance<T>(this, amount);
 
+  /// Moves backward a certain amount of steps after parsing, if it was successful.
   Parser<T> back(int amount) => new _Advance<T>(this, amount * -1);
 
+  /// Casts this parser to produce [U] objects.
   Parser<U> cast<U extends T>() => new _Cast<T, U>(this);
 
+  /// Casts this parser to produce [dynamic] objects.
   Parser<dynamic> castDynamic() => new _CastDynamic<T>(this);
 
+  /// Runs the given function, which changes the returned [ParseResult] into one relating to a [U] object.
   Parser<U> change<U>(ParseResult<U> Function(ParseResult<T>) f) {
     return new _Change<T, U>(this, f);
   }
@@ -61,6 +93,7 @@ abstract class Parser<T> {
     return new _FoldErrors<T>(this, equal);
   }
 
+  /// Transforms the parse result using a unary function.
   Parser<U> map<U>(U Function(ParseResult<T>) f) {
     return new _Map<T, U>(this, f);
   }
@@ -79,6 +112,18 @@ abstract class Parser<T> {
   /// Use this to prevent excessive recursion.
   Parser<T> cache() => new _Cache<T>(this);
 
+  /// Consumes `this` and another parser, but only considers the result of `this` parser.
+  Parser<T> and(Parser other) => then(other).change<T>((r) {
+        return new ParseResult(
+          this,
+          r.successful,
+          r.errors,
+          span: r.span,
+          value: r.value != null ? r.value[0] : r.value,
+        );
+      });
+
+  /// Shortcut for [or]-ing two parsers.
   Parser<T> or<U>(Parser other) => any<T>([this, other]);
 
   /// Parses this sequence one or more times.
@@ -121,17 +166,26 @@ abstract class Parser<T> {
     ]).index(1).castDynamic().cast<T>();
   }
 
+  /// Parses `this`, either as-is or wrapped in parentheses.
+  Parser<T> maybeParenthesized() {
+    return any([parenthesized(), this]);
+  }
+
+  /// Parses `this`, wrapped in parentheses.
   Parser<T> parenthesized() =>
       surroundedBy(match('(').space(), match(')').space());
 
   /// Consumes any trailing whitespace.
   Parser<T> space() => trail(new RegExp(r'[ \n\r\t]+'));
 
+  /// Consumes 0 or more instance(s) of this parser.
   ListParser<T> star({bool backtrack: true}) =>
-      times(1, exact: false, backtrack: backtrack);
+      times(1, exact: false, backtrack: backtrack).opt();
 
+  /// Shortcut for [chain]-ing two parsers together.
   ListParser<U> then<U>(Parser other) => chain<U>([this, other]);
 
+  /// Casts this instance into a [ListParser].
   ListParser<T> toList() => new _ToList<T>(this);
 
   /// Consumes and ignores any trailing occurrences of [pattern].
@@ -160,18 +214,34 @@ abstract class Parser<T> {
   /// modify the scanner state.
   Parser<T> opt({bool backtrack: true}) => new _Opt(this, backtrack);
 
+  /// Sets the value of the [ParseResult].
   Parser<T> value(T Function(ParseResult<T>) f) {
     return new _Value<T>(this, f);
   }
+
+  /// Prints a representation of this parser, ideally without causing a stack overflow.
+  void stringify(CodeBuffer buffer);
+
+  @override
+  String toString() {
+    var b = new CodeBuffer();
+    stringify(b);
+    return b.toString();
+  }
 }
 
+/// A [Parser] that produces [List]s of a type [T].
 abstract class ListParser<T> extends Parser<List<T>> {
+  /// Shortcut for calling [index] with `0`.
   Parser<T> first() => index(0);
 
-  Parser<T> index(int index) => new _Index<T>(this, index);
+  /// Modifies this parser to only return the value at the given index [i].
+  Parser<T> index(int i) => new _Index<T>(this, i);
 
+  /// Shortcut for calling [index] with the greatest-possible index.
   Parser<T> last() => index(-1);
 
+  /// Modifies this parser to call `List.reduce` on the parsed values.
   Parser<T> reduce(T Function(T, T) combine) => new _Reduce<T>(this, combine);
 
   /// Sorts the parsed values, using the given [Comparator].
@@ -180,6 +250,7 @@ abstract class ListParser<T> extends Parser<List<T>> {
   @override
   ListParser<T> opt({bool backtrack: true}) => new _ListOpt(this, backtrack);
 
+  /// Modifies this parser, returning only the values that match a predicate.
   ListParser<T> where(bool Function(T) f) =>
       map<List<T>>((r) => r.value.where(f).toList());
 
@@ -187,6 +258,7 @@ abstract class ListParser<T> extends Parser<List<T>> {
   Parser<String> flatten() => map<String>((r) => r.span.text);
 }
 
+/// The result generated by a [Parser].
 class ParseResult<T> {
   final Parser<T> parser;
   final bool successful;

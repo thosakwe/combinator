@@ -21,4 +21,11 @@ class _ToList<T> extends ListParser<T> {
       value: [result.value],
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer..writeln('to list (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

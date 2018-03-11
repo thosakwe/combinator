@@ -27,4 +27,12 @@ class _Check<T> extends Parser<T> {
     } else
       return result;
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    var d = matcher.describe(new StringDescription());
+    buffer..writeln('check($d) (')..indent();
+    parser.stringify(buffer);
+    buffer..outdent()..writeln(')');
+  }
 }

@@ -54,6 +54,7 @@ Parser<num> calculatorGrammar() {
 }
 
 main() {
+  print(calculator);
   while (true) {
     stdout.write('Enter an expression: ');
     var line = stdin.readLineSync();

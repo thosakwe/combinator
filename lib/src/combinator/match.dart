@@ -29,4 +29,9 @@ class _Match<T> extends Parser<T> {
       span: scanner.lastSpan,
     );
   }
+
+  @override
+  void stringify(CodeBuffer buffer) {
+    buffer.writeln('match($pattern)');
+  }
 }

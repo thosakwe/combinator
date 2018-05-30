@@ -7,16 +7,20 @@ class _Advance<T> extends Parser<T> {
   _Advance(this.parser, this.amount);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1).change(parser: this);
-    if (result.successful) scanner.position += amount;
+  ParseResult<T> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth()).change(parser: this);
+    if (result.successful) args.scanner.position += amount;
     return result;
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('advance($amount) (')..indent();
+    buffer
+      ..writeln('advance($amount) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

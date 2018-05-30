@@ -7,20 +7,24 @@ class _Opt<T> extends Parser<T> {
   _Opt(this.parser, this.backtrack);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var replay = scanner.position;
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<T> __parse(ParseArgs args) {
+    var replay = args.scanner.position;
+    var result = parser._parse(args.increaseDepth());
 
-    if (!result.successful) scanner.position = replay;
+    if (!result.successful) args.scanner.position = replay;
 
     return result.change(parser: this, successful: true);
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('optional (')..indent();
+    buffer
+      ..writeln('optional (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }
 
@@ -31,19 +35,23 @@ class _ListOpt<T> extends ListParser<T> {
   _ListOpt(this.parser, this.backtrack);
 
   @override
-  ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
-    var replay = scanner.position;
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<List<T>> __parse(ParseArgs args) {
+    var replay = args.scanner.position;
+    var result = parser._parse(args.increaseDepth());
 
-    if (!result.successful) scanner.position = replay;
+    if (!result.successful) args.scanner.position = replay;
 
     return result.change(parser: this, successful: true);
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('optional (')..indent();
+    buffer
+      ..writeln('optional (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

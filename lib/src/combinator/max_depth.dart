@@ -7,18 +7,22 @@ class _MaxDepth<T> extends Parser<T> {
   _MaxDepth(this.parser, this.cap);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    if (depth > cap) {
-      return new ParseResult<T>(this, false, []);
+  ParseResult<T> __parse(ParseArgs args) {
+    if (args.depth > cap) {
+      return new ParseResult<T>(args.trampoline, args.scanner, this, false, []);
     }
 
-    return parser.parse(scanner, depth + 1);
+    return parser._parse(args.increaseDepth());
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('max depth($cap) (')..indent();
+    buffer
+      ..writeln('max depth($cap) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

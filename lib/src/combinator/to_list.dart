@@ -6,14 +6,16 @@ class _ToList<T> extends ListParser<T> {
   _ToList(this.parser);
 
   @override
-  ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<List<T>> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
 
     if (result.value is List) {
       return (result as ParseResult<List<T>>).change(parser: this);
     }
 
     return new ParseResult(
+      args.trampoline,
+      args.scanner,
       this,
       result.successful,
       result.errors,
@@ -24,8 +26,12 @@ class _ToList<T> extends ListParser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('to list (')..indent();
+    buffer
+      ..writeln('to list (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

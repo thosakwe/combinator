@@ -7,14 +7,16 @@ class _Compare<T> extends ListParser<T> {
   _Compare(this.parser, this.compare);
 
   @override
-  ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<List<T>> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
     if (!result.successful) return result;
 
     result = result.change(
         value: result.value?.isNotEmpty == true ? result.value : []);
     result = result.change(value: new List<T>.from(result.value));
     return new ParseResult<List<T>>(
+      args.trampoline,
+      args.scanner,
       this,
       true,
       [],
@@ -25,8 +27,12 @@ class _Compare<T> extends ListParser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('sort($compare) (')..indent();
+    buffer
+      ..writeln('sort($compare) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

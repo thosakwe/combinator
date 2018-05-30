@@ -1,6 +1,6 @@
 import 'package:source_span/source_span.dart';
 
-class SyntaxError extends Error {
+class SyntaxError implements Exception {
   final SyntaxErrorSeverity severity;
   final String message;
   final FileSpan span;
@@ -18,4 +18,6 @@ class SyntaxError extends Error {
 enum SyntaxErrorSeverity {
   warning,
   error,
+  info,
+  hint,
 }

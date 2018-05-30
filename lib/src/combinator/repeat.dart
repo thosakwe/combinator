@@ -11,20 +11,20 @@ class _Repeat<T> extends ListParser<T> {
       this.backtrack, this.severity);
 
   @override
-  ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
+  ParseResult<List<T>> __parse(ParseArgs args) {
     var errors = <SyntaxError>[];
     var results = <T>[];
     var spans = <FileSpan>[];
-    int success = 0, replay = scanner.position;
+    int success = 0, replay = args.scanner.position;
     ParseResult<T> result;
 
     do {
-      result = parser.parse(scanner, depth + 1);
+      result = parser._parse(args.increaseDepth());
       if (result.successful) {
         success++;
         results.add(result.value);
-        replay = scanner.position;
-      } else if (backtrack) scanner.position = replay;
+        replay = args.scanner.position;
+      } else if (backtrack) args.scanner.position = replay;
 
       if (result.span != null) spans.add(result.span);
     } while (result.successful);
@@ -35,27 +35,31 @@ class _Repeat<T> extends ListParser<T> {
         new SyntaxError(
           severity,
           tooFew ?? 'Expected at least $count occurence(s).',
-          result.span ?? scanner.emptySpan,
+          result.span ?? args.scanner.emptySpan,
         ),
       );
 
-      if (backtrack) scanner.position = replay;
+      if (backtrack) args.scanner.position = replay;
 
-      return new ParseResult<List<T>>(this, false, errors);
+      return new ParseResult<List<T>>(
+          args.trampoline, args.scanner, this, false, errors);
     } else if (success > count && exact) {
-      if (backtrack) scanner.position = replay;
+      if (backtrack) args.scanner.position = replay;
 
-      return new ParseResult<List<T>>(this, false, [
+      return new ParseResult<List<T>>(
+          args.trampoline, args.scanner, this, false, [
         new SyntaxError(
           severity,
           tooMany ?? 'Expected no more than $count occurence(s).',
-          result.span ?? scanner.emptySpan,
+          result.span ?? args.scanner.emptySpan,
         ),
       ]);
     }
 
     var span = spans.reduce((a, b) => a.expand(b));
     return new ParseResult<List<T>>(
+      args.trampoline,
+      args.scanner,
       this,
       true,
       [],
@@ -69,8 +73,12 @@ class _Repeat<T> extends ListParser<T> {
     var r = new StringBuffer('{$count');
     if (!exact) r.write(',');
     r.write('}');
-    buffer..writeln('repeat($r) (')..indent();
+    buffer
+      ..writeln('repeat($r) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

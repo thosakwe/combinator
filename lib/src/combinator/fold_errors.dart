@@ -7,8 +7,8 @@ class _FoldErrors<T> extends Parser<T> {
   _FoldErrors(this.parser, this.equal);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1).change(parser: this);
+  ParseResult<T> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth()).change(parser: this);
     var errors = result.errors.fold<List<SyntaxError>>([], (out, e) {
       if (!out.any((b) => equal(e, b))) out.add(e);
       return out;
@@ -18,8 +18,12 @@ class _FoldErrors<T> extends Parser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('fold errors (')..indent();
+    buffer
+      ..writeln('fold errors (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

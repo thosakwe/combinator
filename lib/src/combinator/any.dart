@@ -21,17 +21,24 @@ class _Any<T> extends Parser<T> {
   _Any(this.parsers, this.backtrack, this.errorMessage, this.severity);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var errors = <SyntaxError>[];
-    int replay = scanner.position;
+  ParseResult<T> _parse(ParseArgs args) {
+    var inactive = parsers
+        .where((p) => !args.trampoline.isActive(p, args.scanner.position));
 
-    for (var parser in parsers) {
-      var result = parser.parse(scanner, depth + 1);
+    if (inactive.isEmpty) {
+      return new ParseResult(args.trampoline, args.scanner, this, false, []);
+    }
+
+    var errors = <SyntaxError>[];
+    int replay = args.scanner.position;
+
+    for (var parser in inactive) {
+      var result = parser._parse(args.increaseDepth());
 
       if (result.successful)
         return result;
       else {
-        if (backtrack) scanner.position = replay;
+        if (backtrack) args.scanner.position = replay;
         if (parser is _Alt) errors.addAll(result.errors);
       }
     }
@@ -41,25 +48,37 @@ class _Any<T> extends Parser<T> {
         new SyntaxError(
           severity,
           errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
-          scanner.emptySpan,
+          args.scanner.emptySpan,
         ),
       );
     }
 
-    return new ParseResult(this, false, errors);
+    return new ParseResult(args.trampoline, args.scanner, this, false, errors);
+  }
+
+  @override
+  ParseResult<T> __parse(ParseArgs args) {
+    // Never called
+    return null;
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('any(${parsers.length}) (')..indent();
+    buffer
+      ..writeln('any(${parsers.length}) (')
+      ..indent();
     int i = 1;
 
     for (var parser in parsers) {
-      buffer..writeln('#${i++}:')..indent();
+      buffer
+        ..writeln('#${i++}:')
+        ..indent();
       parser.stringify(buffer);
       buffer.outdent();
     }
 
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

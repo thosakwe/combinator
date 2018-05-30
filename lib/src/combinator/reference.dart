@@ -16,18 +16,22 @@ class Reference<T> extends Parser<T> {
   }
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
+  ParseResult<T> __parse(ParseArgs args) {
     if (_parser == null)
       throw new StateError('There is no parser assigned to this reference.');
-    return _parser.parse(scanner, depth + 1);
+    return _parser._parse(args);
+  }
+
+  @override
+  ParseResult<T> _parse(ParseArgs args) {
+    return _parser._parse(args);
   }
 
   @override
   void stringify(CodeBuffer buffer) {
     if (_parser == null)
       buffer.writeln('(undefined reference <$T>)');
-    else if (!printed)
-      _parser.stringify(buffer);
+    else if (!printed) _parser.stringify(buffer);
     printed = true;
     buffer.writeln('(previously printed reference)');
   }

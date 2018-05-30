@@ -7,14 +7,16 @@ class _Index<T> extends Parser<T> {
   _Index(this.parser, this.index);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<T> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
     var value;
 
     if (result.successful)
       value = index == -1 ? result.value.last : result.value.elementAt(index);
 
     return new ParseResult<T>(
+      args.trampoline,
+      args.scanner,
       this,
       result.successful,
       result.errors,
@@ -25,8 +27,12 @@ class _Index<T> extends Parser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('index($index) (')..indent();
+    buffer
+      ..writeln('index($index) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

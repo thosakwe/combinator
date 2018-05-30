@@ -5,20 +5,20 @@ class _Safe<T> extends Parser<T> {
   final bool backtrack;
   final String errorMessage;
   final SyntaxErrorSeverity severity;
-  bool _triggered =false;
+  bool _triggered = false;
 
   _Safe(this.parser, this.backtrack, this.errorMessage, this.severity);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var replay = scanner.position;
+  ParseResult<T> __parse(ParseArgs args) {
+    var replay = args.scanner.position;
 
     try {
       if (_triggered) throw null;
-      return parser.parse(scanner, depth + 1);
+      return parser._parse(args.increaseDepth());
     } catch (_) {
       _triggered = true;
-      if (backtrack) scanner.position = replay;
+      if (backtrack) args.scanner.position = replay;
       var errors = <SyntaxError>[];
 
       if (errorMessage != null) {
@@ -27,20 +27,25 @@ class _Safe<T> extends Parser<T> {
           new SyntaxError(
             severity,
             errorMessage,
-            scanner.lastSpan ?? scanner.emptySpan,
+            args.scanner.lastSpan ?? args.scanner.emptySpan,
           ),
         );
       }
 
-      return new ParseResult<T>(this, false, errors);
+      return new ParseResult<T>(
+          args.trampoline, args.scanner, this, false, errors);
     }
   }
 
   @override
   void stringify(CodeBuffer buffer) {
     var t = _triggered ? 'triggered' : 'not triggered';
-    buffer..writeln('safe($t) (')..indent();
+    buffer
+      ..writeln('safe($t) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

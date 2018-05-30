@@ -7,9 +7,11 @@ class _Map<T, U> extends Parser<U> {
   _Map(this.parser, this.f);
 
   @override
-  ParseResult<U> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<U> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
     return new ParseResult<U>(
+      args.trampoline,
+      args.scanner,
       this,
       result.successful,
       result.errors,
@@ -20,9 +22,13 @@ class _Map<T, U> extends Parser<U> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('map<$U> (')..indent();
+    buffer
+      ..writeln('map<$U> (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }
 
@@ -33,14 +39,18 @@ class _Change<T, U> extends Parser<U> {
   _Change(this.parser, this.f);
 
   @override
-  ParseResult<U> parse(SpanScanner scanner, [int depth = 1]) {
-    return f(parser.parse(scanner, depth + 1)).change(parser: this);
+  ParseResult<U> __parse(ParseArgs args) {
+    return f(parser._parse(args.increaseDepth())).change(parser: this);
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('change($f) (')..indent();
+    buffer
+      ..writeln('change($f) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

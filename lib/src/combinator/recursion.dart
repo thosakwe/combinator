@@ -1,16 +1,16 @@
 part of lex.src.combinator;
 
+/*
 /// Handles left recursion in a grammar using the Pratt algorithm.
 class Recursion<T> {
   Iterable<Parser<T>> prefix;
-  Map<Parser, T Function(T, ParseResult, SpanScanner)> infix;
-  Map<Parser, T Function(T, ParseResult, SpanScanner)> postfix;
+  Map<Parser, T Function(T, T, ParseResult<T>)> infix;
+  Map<Parser, T Function(T, T, ParseResult<T>)> postfix;
 
-  Recursion(
-      {this.prefix, this.infix, this.postfix}) {
-        prefix ??= [];
-        infix ??= {};
-        postfix ??= {};
+  Recursion({this.prefix, this.infix, this.postfix}) {
+    prefix ??= [];
+    infix ??= {};
+    postfix ??= {};
   }
 
   Parser<T> precedence(int p) => new _Precedence(this, p);
@@ -34,35 +34,52 @@ class _Precedence<T> extends Parser<T> {
   _Precedence(this.r, this.precedence);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    int replay = scanner.position;
+  ParseResult<T> __parse(ParseArgs args) {
+    int replay = args.scanner.position;
     var errors = <SyntaxError>[];
-    var start = scanner.state;
+    var start = args.scanner.state;
+    var reversedKeys = r.infix.keys.toList().reversed;
 
     for (var pre in r.prefix) {
-      var result = pre.parse(scanner, depth + 1);
+      var result = pre._parse(args.increaseDepth()), originalResult = result;
 
       if (!result.successful) {
         if (pre is _Alt) errors.addAll(result.errors);
-        scanner.position = replay;
+        args.scanner.position = replay;
       } else {
         var left = result.value;
-        replay = scanner.position;
+        replay = args.scanner.position;
+        //print('${result.span.text}:\n' + scanner.emptySpan.highlight());
 
         while (true) {
           bool matched = false;
 
-          for (int i = 0; i < r.infix.length; i++) {
-            var fix = r.infix.keys.elementAt(i);
+          //for (int i = 0; i < r.infix.length; i++) {
+          for (int i = r.infix.length - 1; i >= 0; i--) {
+            //var fix = r.infix.keys.elementAt(r.infix.length - i - 1);
+            var fix = reversedKeys.elementAt(i);
 
-            if (precedence < i) {
-              var result = fix.parse(scanner, depth + 1);
+            if (i < precedence) continue;
+
+            var result = fix._parse(args.increaseDepth());
+
+            if (!result.successful) {
+              if (fix is _Alt) errors.addAll(result.errors);
+              // If this is the last alternative and it failed, don't continue looping.
+              //if (true || i + 1 < r.infix.length)
+              args.scanner.position = replay;
+            } else {
+              //print('FOUND $fix when left was $left');
+              //print('$i vs $precedence\n${originalResult.span.highlight()}');
+              result = r.precedence(i)._parse(args.increaseDepth());
+
               if (!result.successful) {
-                if (fix is _Alt) errors.addAll(result.errors);
-                scanner.position = replay;
               } else {
-                matched = true;
-                left = r.infix[fix](left, result, scanner);
+                matched = false;
+                var old = left;
+                left = r.infix[fix](left, result.value, result);
+                print(
+                    '$old $fix ${result.value} = $left\n${result.span.highlight()}');
                 break;
               }
             }
@@ -71,34 +88,43 @@ class _Precedence<T> extends Parser<T> {
           if (!matched) break;
         }
 
-        replay = scanner.position;
+        replay = args.scanner.position;
+        //print('f ${result.span.text}');
 
         for (var post in r.postfix.keys) {
-          var result = pre.parse(scanner, depth + 1);
+          var result = pre._parse(args.increaseDepth());
 
           if (!result.successful) {
             if (post is _Alt) errors.addAll(result.errors);
-            scanner.position = replay;
+            args.scanner.position = replay;
           } else {
-            left = r.infix[post](left, result, scanner);
+            left = r.infix[post](left, originalResult.value, result);
           }
         }
 
+        if (!args.scanner.isDone) {
+          // If we're not done scanning, then we need some sort of guard to ensure the
+          // that this exact parser does not run again in the exact position.
+        }
         return new ParseResult(
+          args.trampoline,
+          args.scanner,
           this,
           true,
           errors,
           value: left,
-          span: scanner.spanFrom(start),
+          span: args.scanner.spanFrom(start),
         );
       }
     }
 
     return new ParseResult(
+      args.trampoline,
+      args.scanner,
       this,
       false,
       errors,
-      span: scanner.spanFrom(start),
+      span: args.scanner.spanFrom(start),
     );
   }
 
@@ -113,3 +139,4 @@ class _Precedence<T> extends Parser<T> {
       ..writeln(')');
   }
 }
+*/

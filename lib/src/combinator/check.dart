@@ -9,9 +9,9 @@ class _Check<T> extends Parser<T> {
   _Check(this.parser, this.matcher, this.errorMessage, this.severity);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
+  ParseResult<T> __parse(ParseArgs args) {
     var matchState = {};
-    var result = parser.parse(scanner, depth + 1).change(parser: this);
+    var result = parser._parse(args.increaseDepth()).change(parser: this);
     if (!result.successful)
       return result;
     else if (!matcher.matches(result.value, matchState)) {
@@ -31,8 +31,12 @@ class _Check<T> extends Parser<T> {
   @override
   void stringify(CodeBuffer buffer) {
     var d = matcher.describe(new StringDescription());
-    buffer..writeln('check($d) (')..indent();
+    buffer
+      ..writeln('check($d) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

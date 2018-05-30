@@ -13,9 +13,10 @@ class _Match<T> extends Parser<T> {
   _Match(this.pattern, this.errorMessage, this.severity);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
+  ParseResult<T> __parse(ParseArgs args) {
+    var scanner = args.scanner;
     if (!scanner.scan(pattern))
-      return new ParseResult(this, false, [
+      return new ParseResult(args.trampoline, scanner, this, false, [
         new SyntaxError(
           severity,
           errorMessage ?? 'Expected "$pattern".',
@@ -23,6 +24,8 @@ class _Match<T> extends Parser<T> {
         ),
       ]);
     return new ParseResult<T>(
+      args.trampoline,
+      scanner,
       this,
       true,
       [],

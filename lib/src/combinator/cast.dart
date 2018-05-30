@@ -6,9 +6,11 @@ class _Cast<T, U extends T> extends Parser<U> {
   _Cast(this.parser);
 
   @override
-  ParseResult<U> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<U> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
     return new ParseResult<U>(
+      args.trampoline,
+      args.scanner,
       this,
       result.successful,
       result.errors,
@@ -19,9 +21,13 @@ class _Cast<T, U extends T> extends Parser<U> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('cast<$U> (')..indent();
+    buffer
+      ..writeln('cast<$U> (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }
 
@@ -31,9 +37,11 @@ class _CastDynamic<T> extends Parser<dynamic> {
   _CastDynamic(this.parser);
 
   @override
-  ParseResult<dynamic> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<dynamic> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
     return new ParseResult<dynamic>(
+      args.trampoline,
+      args.scanner,
       this,
       result.successful,
       result.errors,
@@ -44,8 +52,12 @@ class _CastDynamic<T> extends Parser<dynamic> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('cast<dynamic> (')..indent();
+    buffer
+      ..writeln('cast<dynamic> (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

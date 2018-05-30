@@ -1,60 +1,58 @@
-// https://github.com/dart-lang/sdk/issues/31283
-
+import 'dart:math';
 import 'dart:io';
 import 'package:combinator/combinator.dart';
 import 'package:string_scanner/string_scanner.dart';
 
-final Parser<num> calculator = calculatorGrammar();
-
+/// Note: This grammar does not handle precedence, for the sake of simplicity.
 Parser<num> calculatorGrammar() {
   var expr = reference<num>();
+
   var number = match(new RegExp(r'-?[0-9]+(\.[0-9]+)?'))
       .value((r) => num.parse(r.span.text));
-  var binaryOperator = any([
-    match('*'),
-    match('/'),
-    match('+'),
-    match('-'),
-  ]).value((r) => r.span.text);
-  var parenthesizedExpression = chain([
-    match('('),
-    expr,
-    match(')'),
-  ]).index(1).cast<num>();
 
-  var binaryExpression = chain([
-    expr.maxDepth(
-        100), // Use maxDepth(...) to prevent stack overflows on left-recursive rules
-    binaryOperator,
-    expr,
-  ]).map((r) {
-    var left = r.value[0], right = r.value[2];
+  var hex = match(new RegExp(r'0x([A-Fa-f0-9]+)'))
+      .map((r) => int.parse(r.scanner.lastMatch[1], radix: 16));
 
-    switch (r.value[1]) {
-      case '*':
-        return left * right;
-      case '/':
-        return left / right;
-      case '+':
-        return left + right;
-      case '-':
-        return left - right;
-    }
+  var binary = match(new RegExp(r'([0-1]+)b'))
+      .map((r) => int.parse(r.scanner.lastMatch[1], radix: 2));
 
-    throw new UnsupportedError('Unknown operator: "${r.value[1]}".');
-  });
+  var alternatives = <Parser<num>>[];
 
-  expr.parser = longest([
+  void registerBinary(String op, num Function(num, num) f) {
+    alternatives.add(
+      chain([
+        expr.space(),
+        match(op).space(),
+        expr.space(),
+      ]).map((r) => f(r.value[0], r.value[2])),
+    );
+  }
+
+  registerBinary('**', (a, b) => pow(a, b));
+  registerBinary('*', (a, b) => a * b);
+  registerBinary('/', (a, b) => a / b);
+  registerBinary('%', (a, b) => a % b);
+  registerBinary('+', (a, b) => a + b);
+  registerBinary('-', (a, b) => a - b);
+  registerBinary('^', (a, b) => a.toInt() ^ b.toInt());
+  registerBinary('&', (a, b) => a.toInt() & b.toInt());
+  registerBinary('|', (a, b) => a.toInt() | b.toInt());
+
+  alternatives.addAll([
     number,
-    parenthesizedExpression,
-    binaryExpression,
+    hex,
+    binary,
+    expr.parenthesized(),
   ]);
+
+  expr.parser = longest(alternatives);
 
   return expr;
 }
 
 main() {
-  print(calculator);
+  var calculator = calculatorGrammar();
+
   while (true) {
     stdout.write('Enter an expression: ');
     var line = stdin.readLineSync();

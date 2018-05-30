@@ -4,23 +4,22 @@ import 'package:string_scanner/string_scanner.dart';
 
 final Parser minus = match('-');
 
-final Parser<int> digit = match(
-  new RegExp(r'[0-9]'),
-  errorMessage: 'Expected a number',
-);
+final Parser<int> digit =
+    match(new RegExp(r'[0-9]'), errorMessage: 'Expected a number');
 
 final Parser digits = digit.plus();
 
-final Parser separator = match('.');
+final Parser dot = match('.');
 
-final Parser decimal = digits.then((separator.then(digits)).opt());
+final Parser decimal = ( // digits, (dot, digits)?
+        digits & (dot & digits).opt() //
+    );
 
-final Parser number =
-    minus.opt().then(decimal).map<num>((r) => num.parse(r.span.text));
+final Parser number = //
+    (minus.opt() & decimal) // minus?, decimal
+        .map<num>((r) => num.parse(r.span.text));
 
 main() {
-  print(number);
-
   while (true) {
     stdout.write('Enter a number: ');
     var line = stdin.readLineSync();

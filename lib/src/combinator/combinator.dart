@@ -1,10 +1,12 @@
 library lex.src.combinator;
 
+import 'dart:collection';
+
 import 'package:code_buffer/code_buffer.dart';
 import 'package:matcher/matcher.dart';
-import 'package:meta/meta.dart';
 import 'package:source_span/source_span.dart';
 import 'package:string_scanner/string_scanner.dart';
+import 'package:tuple/tuple.dart';
 import '../error.dart';
 
 part 'any.dart';
@@ -53,10 +55,41 @@ part 'util.dart';
 
 part 'value.dart';
 
+class ParseArgs {
+  final Trampoline trampoline;
+  final SpanScanner scanner;
+  final int depth;
+
+  ParseArgs(this.trampoline, this.scanner, this.depth);
+
+  ParseArgs increaseDepth() => new ParseArgs(trampoline, scanner, depth + 1);
+}
+
 /// A parser combinator, which can parse very complicated grammars in a manageable manner.
 abstract class Parser<T> {
+  ParseResult<T> __parse(ParseArgs args);
+
+  ParseResult<T> _parse(ParseArgs args) {
+    var pos = args.scanner.position;
+
+    if (args.trampoline.hasMemoized(this, pos))
+      return args.trampoline.getMemoized<T>(this, pos);
+
+    if (args.trampoline.isActive(this, pos))
+      return new ParseResult(args.trampoline, args.scanner, this, false, []);
+
+    args.trampoline.enter(this, pos);
+    var result = __parse(args);
+    args.trampoline.memoize(this, pos, result);
+    args.trampoline.exit(this);
+    return result;
+  }
+
   /// Parses text from a [SpanScanner].
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]);
+  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
+    var args = new ParseArgs(new Trampoline(), scanner, depth);
+    return _parse(args);
+  }
 
   /// Skips forward a certain amount of steps after parsing, if it was successful.
   Parser<T> forward(int amount) => new _Advance<T>(this, amount);
@@ -101,6 +134,8 @@ abstract class Parser<T> {
   /// Prevents recursion past a certain [depth], preventing stack overflow errors.
   Parser<T> maxDepth(int depth) => new _MaxDepth<T>(this, depth);
 
+  Parser<T> operator ~() => negate();
+
   /// Ensures this pattern is not matched.
   ///
   /// You can provide an [errorMessage].
@@ -112,9 +147,13 @@ abstract class Parser<T> {
   /// Use this to prevent excessive recursion.
   Parser<T> cache() => new _Cache<T>(this);
 
+  Parser<T> operator &(Parser<T> other) => and(other);
+
   /// Consumes `this` and another parser, but only considers the result of `this` parser.
   Parser<T> and(Parser other) => then(other).change<T>((r) {
         return new ParseResult(
+          r.trampoline,
+          r.scanner,
           this,
           r.successful,
           r.errors,
@@ -122,6 +161,8 @@ abstract class Parser<T> {
           value: r.value != null ? r.value[0] : r.value,
         );
       });
+
+  Parser<T> operator |(Parser<T> other) => or(other);
 
   /// Shortcut for [or]-ing two parsers.
   Parser<T> or<U>(Parser other) => any<T>([this, other]);
@@ -139,20 +180,29 @@ abstract class Parser<T> {
       new _Safe<T>(
           this, backtrack, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
+  Parser<List<T>> separatedByComma() => separatedBy(match(',').space());
+
   /// Expects to see an infinite amounts of the pattern, separated by the [other] pattern.
   ///
   /// Use this as a shortcut to parse arrays, parameter lists, etc.
   Parser<List<T>> separatedBy(Parser other) {
-    var trailed = then(other)
-        .map<T>((r) => r.value?.isNotEmpty == true ? r.value[0] : null);
-    var leading = trailed.star(backtrack: true).opt();
-    return leading.then(opt()).map((r) {
-      var preceding = r.value[0] ?? [];
+    var suffix = other.then(this).index(1);
+    return this.then(suffix.star()).map((r) {
+      var preceding =
+          r.value.isEmpty ? [] : (r.value[0] == null ? [] : [r.value[0]]);
       var out = new List<T>.from(preceding);
-      if (r.value[1] != null) out.add(r.value[1]);
+      if (r.value[1] != null) out.addAll(r.value[1]);
       return out;
     });
   }
+
+  Parser<T> surroundedByCurlyBraces({T defaultValue}) => opt()
+      .surroundedBy(match('{').space(), match('}').space())
+      .map((r) => r.value ?? defaultValue);
+
+  Parser<T> surroundedBySquareBrackets({T defaultValue}) => opt()
+      .surroundedBy(match('[').space(), match(']').space())
+      .map((r) => r.value ?? defaultValue);
 
   /// Expects to see the pattern, surrounded by the others.
   ///
@@ -224,6 +274,7 @@ abstract class Parser<T> {
 
   @override
   String toString() {
+    return super.toString();
     var b = new CodeBuffer();
     stringify(b);
     return b.toString();
@@ -258,6 +309,45 @@ abstract class ListParser<T> extends Parser<List<T>> {
   Parser<String> flatten() => map<String>((r) => r.span.text);
 }
 
+/// Prevents stack overflow in recursive parsers.
+class Trampoline {
+  final Map<Parser, Queue<int>> _active = {};
+  final Map<Parser, List<Tuple2<int, ParseResult>>> _memo = {};
+
+  bool hasMemoized(Parser parser, int position) {
+    var list = _memo[parser];
+    return list?.any((t) => t.item1 == position) == true;
+  }
+
+  ParseResult<T> getMemoized<T>(Parser parser, int position) {
+    return _memo[parser].firstWhere((t) => t.item1 == position).item2;
+  }
+
+  void memoize(Parser parser, int position, ParseResult result) {
+    if (result != null) {
+      var list = _memo.putIfAbsent(parser, () => []);
+      var tuple = new Tuple2(position, result);
+      if (!list.contains(tuple)) list.add(tuple);
+    }
+  }
+
+  bool isActive(Parser parser, int position) {
+    if (!_active.containsKey(parser)) return false;
+    var q = _active[parser];
+    if (q.isEmpty) return false;
+    //return q.contains(position);
+    return q.first == position;
+  }
+
+  void enter(Parser parser, int position) {
+    _active.putIfAbsent(parser, () => new Queue()).addFirst(position);
+  }
+
+  void exit(Parser parser) {
+    if (_active.containsKey(parser)) _active[parser].removeFirst();
+  }
+}
+
 /// The result generated by a [Parser].
 class ParseResult<T> {
   final Parser<T> parser;
@@ -265,8 +355,11 @@ class ParseResult<T> {
   final Iterable<SyntaxError> errors;
   final FileSpan span;
   final T value;
+  final SpanScanner scanner;
+  final Trampoline trampoline;
 
-  ParseResult(this.parser, this.successful, this.errors,
+  ParseResult(
+      this.trampoline, this.scanner, this.parser, this.successful, this.errors,
       {this.span, this.value});
 
   ParseResult<T> change(
@@ -276,6 +369,8 @@ class ParseResult<T> {
       FileSpan span,
       T value}) {
     return new ParseResult<T>(
+      trampoline,
+      scanner,
       parser ?? this.parser,
       successful ?? this.successful,
       errors ?? this.errors,

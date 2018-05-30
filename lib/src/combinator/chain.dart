@@ -17,13 +17,13 @@ class _Alt<T> extends Parser<T> {
   _Alt(this.parser, this.errorMessage, this.severity);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<T> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
     return result.successful
         ? result
         : result.addErrors([
             new SyntaxError(severity ?? SyntaxErrorSeverity.error, errorMessage,
-                result.span ?? scanner.emptySpan),
+                result.span ?? args.scanner.emptySpan),
           ]);
   }
 
@@ -41,20 +41,21 @@ class _Chain<T> extends ListParser<T> {
   _Chain(this.parsers, this.failFast, this.severity);
 
   @override
-  ParseResult<List<T>> parse(SpanScanner scanner, [int depth = 1]) {
+  ParseResult<List<T>> __parse(ParseArgs args) {
     var errors = <SyntaxError>[];
     var results = <T>[];
     var spans = <FileSpan>[];
     bool successful = true;
 
     for (var parser in parsers) {
-      var result = parser.parse(scanner, depth + 1);
+      var result = parser._parse(args.increaseDepth());
 
       if (!result.successful) {
         if (parser is _Alt) errors.addAll(result.errors);
 
         if (failFast) {
-          return new ParseResult(this, false, result.errors);
+          return new ParseResult(
+              args.trampoline, args.scanner, this, false, result.errors);
         }
 
         successful = false;
@@ -72,6 +73,8 @@ class _Chain<T> extends ListParser<T> {
     }
 
     return new ParseResult<List<T>>(
+      args.trampoline,
+      args.scanner,
       this,
       successful,
       errors,
@@ -82,15 +85,21 @@ class _Chain<T> extends ListParser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('chain(${parsers.length}) (')..indent();
+    buffer
+      ..writeln('chain(${parsers.length}) (')
+      ..indent();
     int i = 1;
 
     for (var parser in parsers) {
-      buffer..writeln('#${i++}:')..indent();
+      buffer
+        ..writeln('#${i++}:')
+        ..indent();
       parser.stringify(buffer);
       buffer.outdent();
     }
 
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

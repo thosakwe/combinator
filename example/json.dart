@@ -19,11 +19,10 @@ Parser jsonGrammar() {
   );
 
   // Parse an array
-  var array = chain([
-    match('[').space(),
-    expr.space().separatedBy(match(',').space()).opt(),
-    match(']').space(),
-  ]).value((r) => r.value[1]);
+  var array = expr
+      .space()
+      .separatedByComma()
+      .surroundedBySquareBrackets(defaultValue: []);
 
   // KV pair
   var keyValuePair = chain([
@@ -32,33 +31,27 @@ Parser jsonGrammar() {
     expr.error(errorMessage: 'Missing expression.'),
   ]).castDynamic().cast<Map>().value((r) => {r.value[0]: r.value[2]});
 
-  // Parse an object
-  var object = chain([
-    match('{').space(),
-    keyValuePair
-        .space()
-        .separatedBy(match(',').space())
-        .error(errorMessage: 'Missing key-value pair.'),
-    match('}').space().error(),
-  ]).value((r) => [r.value[1]]);
+  // Parse an object.
+  var object = keyValuePair
+      .separatedByComma()
+      .castDynamic()
+      .surroundedByCurlyBraces(defaultValue: {});
 
-  expr.parser = any(
+  expr.parser = longest(
     [
       array,
       number,
       string,
       object.error(),
     ],
-    errorMessage: false,
-  )
-      .space();
+    errorMessage: 'Expected an expression.',
+  ).space();
 
   return expr.foldErrors();
 }
 
 main() {
   var JSON = jsonGrammar();
-  print(JSON);
 
   while (true) {
     stdout.write('Enter some JSON: ');
@@ -73,6 +66,5 @@ main() {
       }
     } else
       print(result.value);
-    print(result.value.runtimeType);
   }
 }

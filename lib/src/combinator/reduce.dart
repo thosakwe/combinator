@@ -7,11 +7,13 @@ class _Reduce<T> extends Parser<T> {
   _Reduce(this.parser, this.combine);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1);
+  ParseResult<T> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth());
 
     if (!result.successful)
       return new ParseResult<T>(
+        args.trampoline,
+        args.scanner,
         this,
         false,
         result.errors,
@@ -20,6 +22,8 @@ class _Reduce<T> extends Parser<T> {
     result = result.change(
         value: result.value?.isNotEmpty == true ? result.value : []);
     return new ParseResult<T>(
+      args.trampoline,
+      args.scanner,
       this,
       result.successful,
       [],
@@ -30,8 +34,12 @@ class _Reduce<T> extends Parser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('reduce($combine) (')..indent();
+    buffer
+      ..writeln('reduce($combine) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

@@ -8,15 +8,17 @@ class _Negate<T> extends Parser<T> {
   _Negate(this.parser, this.errorMessage, this.severity);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    var result = parser.parse(scanner, depth + 1).change(parser: this);
+  ParseResult<T> __parse(ParseArgs args) {
+    var result = parser._parse(args.increaseDepth()).change(parser: this);
 
     if (!result.successful) {
       return new ParseResult<T>(
+        args.trampoline,
+        args.scanner,
         this,
         true,
         [],
-        span: result.span ?? scanner.lastSpan ?? scanner.emptySpan,
+        span: result.span ?? args.scanner.lastSpan ?? args.scanner.emptySpan,
         value: result.value,
       );
     }
@@ -38,8 +40,12 @@ class _Negate<T> extends Parser<T> {
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('negate (')..indent();
+    buffer
+      ..writeln('negate (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

@@ -7,16 +7,20 @@ class _Cache<T> extends Parser<T> {
   _Cache(this.parser);
 
   @override
-  ParseResult<T> parse(SpanScanner scanner, [int depth = 1]) {
-    return _cache.putIfAbsent(scanner.position, () {
-      return parser.parse(scanner, depth + 1);
+  ParseResult<T> __parse(ParseArgs args) {
+    return _cache.putIfAbsent(args.scanner.position, () {
+      return parser._parse(args.increaseDepth());
     }).change(parser: this);
   }
 
   @override
   void stringify(CodeBuffer buffer) {
-    buffer..writeln('cache(${_cache.length}) (')..indent();
+    buffer
+      ..writeln('cache(${_cache.length}) (')
+      ..indent();
     parser.stringify(buffer);
-    buffer..outdent()..writeln(')');
+    buffer
+      ..outdent()
+      ..writeln(')');
   }
 }

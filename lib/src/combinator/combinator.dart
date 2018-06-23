@@ -180,18 +180,18 @@ abstract class Parser<T> {
       new _Safe<T>(
           this, backtrack, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
-  Parser<List<T>> separatedByComma() => separatedBy(match(',').space());
+  Parser<List<T>> separatedByComma() => separatedBy(match<List<T>>(',').space());
 
   /// Expects to see an infinite amounts of the pattern, separated by the [other] pattern.
   ///
   /// Use this as a shortcut to parse arrays, parameter lists, etc.
   Parser<List<T>> separatedBy(Parser other) {
     var suffix = other.then(this).index(1).cast<T>();
-    return this.then<List<T>>(suffix.star()).map((r) {
+    return this.then(suffix.star()).map((r) {
       var preceding =
           r.value.isEmpty ? [] : (r.value[0] == null ? [] : [r.value[0]]);
       var out = new List<T>.from(preceding);
-      if (r.value[1] != null) out.addAll(r.value[1]);
+      if (r.value[1] != null) out.addAll(r.value[1] as Iterable<T>);
       return out;
     });
   }
@@ -233,7 +233,7 @@ abstract class Parser<T> {
       times(1, exact: false, backtrack: backtrack).opt();
 
   /// Shortcut for [chain]-ing two parsers together.
-  ListParser<U> then<U>(Parser<U> other) => chain<U>([this as Parser<U>, other]);
+  ListParser<dynamic> then(Parser other) => chain<dynamic>([this, other]);
 
   /// Casts this instance into a [ListParser].
   ListParser<T> toList() => new _ToList<T>(this);

@@ -34,7 +34,7 @@ final Parser credentialString = match<Map<String, String>>(
 
 final Parser basic = match<Null>('Basic').space();
 
-final Parser basicAuth = basic.then<dynamic>(credentialString).index(1);
+final Parser basicAuth = basic.then(credentialString).index(1);
 
 void main() {
   while (true) {

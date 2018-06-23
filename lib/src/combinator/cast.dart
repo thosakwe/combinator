@@ -15,7 +15,7 @@ class _Cast<T, U extends T> extends Parser<U> {
       result.successful,
       result.errors,
       span: result.span,
-      value: result.value,
+      value: result.value as U,
     );
   }
 

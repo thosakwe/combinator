@@ -47,7 +47,7 @@ class _Any<T> extends Parser<T> {
       errors.add(
         new SyntaxError(
           severity,
-          errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
+          errorMessage?.toString() ?? 'No match found for ${parsers.length} alternative(s)',
           args.scanner.emptySpan,
         ),
       );

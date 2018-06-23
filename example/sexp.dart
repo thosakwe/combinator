@@ -9,7 +9,7 @@ void main() {
   var expr = reference();
   var symbols = <String, dynamic>{};
 
-  void registerFunction(String name, int nArgs, Function(List) f) {
+  void registerFunction(String name, int nArgs, Function(List<num>) f) {
     symbols[name] = new Tuple2(nArgs, f);
   }
 
@@ -36,7 +36,7 @@ void main() {
       .map((r) =>
           symbols[r.span.text] ??= throw "Undefined symbol: '${r.span.text}'");
 
-  var atom = number | id;
+  var atom = number.castDynamic().or(id);
 
   var list = expr.space().times(2, exact: false).map((r) {
     try {
@@ -49,7 +49,7 @@ void main() {
           out.insert(0, current);
         else {
           var args = [];
-          for (int i = 0; i < current.item1; i++) args.add(out.removeLast());
+          for (int i = 0; i < (current.item1 as num); i++) args.add(out.removeLast());
           out.add(current.item2(args));
         }
       }

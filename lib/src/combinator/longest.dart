@@ -4,14 +4,14 @@ part of lex.src.combinator;
 ///
 /// You can provide a custom [errorMessage].
 Parser<T> longest<T>(Iterable<Parser<T>> parsers,
-    {errorMessage, SyntaxErrorSeverity severity}) {
+    {Object errorMessage, SyntaxErrorSeverity severity}) {
   return new _Longest(
       parsers, errorMessage, severity ?? SyntaxErrorSeverity.error);
 }
 
 class _Longest<T> extends Parser<T> {
   final Iterable<Parser<T>> parsers;
-  final errorMessage;
+  final Object errorMessage;
   final SyntaxErrorSeverity severity;
 
   _Longest(this.parsers, this.errorMessage, this.severity);
@@ -50,7 +50,7 @@ class _Longest<T> extends Parser<T> {
       errors.add(
         new SyntaxError(
           severity,
-          errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
+          errorMessage?.toString() ?? 'No match found for ${parsers.length} alternative(s)',
           args.scanner.emptySpan,
         ),
       );
@@ -83,7 +83,7 @@ class _Longest<T> extends Parser<T> {
     errors.add(
       new SyntaxError(
         severity,
-        errorMessage ?? 'No match found for ${parsers.length} alternative(s)',
+        errorMessage?.toString() ?? 'No match found for ${parsers.length} alternative(s)',
         args.scanner.emptySpan,
       ),
     );

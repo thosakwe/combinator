@@ -158,14 +158,14 @@ abstract class Parser<T> {
           r.successful,
           r.errors,
           span: r.span,
-          value: r.value != null ? r.value[0] : r.value,
+          value: (r.value != null ? r.value[0] : r.value) as T,
         );
       });
 
   Parser<T> operator |(Parser<T> other) => or(other);
 
   /// Shortcut for [or]-ing two parsers.
-  Parser<T> or<U>(Parser other) => any<T>([this, other]);
+  Parser<T> or<U>(Parser<T> other) => any<T>([this, other]);
 
   /// Parses this sequence one or more times.
   ListParser<T> plus() => times(1, exact: false);
@@ -186,7 +186,7 @@ abstract class Parser<T> {
   ///
   /// Use this as a shortcut to parse arrays, parameter lists, etc.
   Parser<List<T>> separatedBy(Parser other) {
-    var suffix = other.then(this).index(1);
+    var suffix = other.then(this).index(1).cast<T>();
     return this.then<List<T>>(suffix.star()).map((r) {
       var preceding =
           r.value.isEmpty ? [] : (r.value[0] == null ? [] : [r.value[0]]);
@@ -233,7 +233,7 @@ abstract class Parser<T> {
       times(1, exact: false, backtrack: backtrack).opt();
 
   /// Shortcut for [chain]-ing two parsers together.
-  ListParser<U> then<U>(Parser other) => chain<U>([this, other]);
+  ListParser<U> then<U>(Parser<U> other) => chain<U>([this as Parser<U>, other]);
 
   /// Casts this instance into a [ListParser].
   ListParser<T> toList() => new _ToList<T>(this);
@@ -302,7 +302,7 @@ abstract class ListParser<T> extends Parser<List<T>> {
   ListParser<T> opt({bool backtrack: true}) => new _ListOpt(this, backtrack);
 
   /// Modifies this parser, returning only the values that match a predicate.
-  ListParser<T> where(bool Function(T) f) =>
+  Parser<List<T>> where(bool Function(T) f) =>
       map<List<T>>((r) => r.value.where(f).toList());
 
   /// Condenses a [ListParser] into having a value of the combined span's text.
@@ -320,7 +320,7 @@ class Trampoline {
   }
 
   ParseResult<T> getMemoized<T>(Parser parser, int position) {
-    return _memo[parser].firstWhere((t) => t.item1 == position).item2;
+    return _memo[parser].firstWhere((t) => t.item1 == position).item2 as ParseResult<T>;
   }
 
   void memoize(Parser parser, int position, ParseResult result) {
@@ -379,7 +379,7 @@ class ParseResult<T> {
     );
   }
 
-  ParseResult addErrors(Iterable<SyntaxError> errors) {
+  ParseResult<T> addErrors(Iterable<SyntaxError> errors) {
     return change(
       errors: new List<SyntaxError>.from(this.errors)..addAll(errors),
     );

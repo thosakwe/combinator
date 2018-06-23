@@ -187,7 +187,7 @@ abstract class Parser<T> {
   /// Use this as a shortcut to parse arrays, parameter lists, etc.
   Parser<List<T>> separatedBy(Parser other) {
     var suffix = other.then(this).index(1);
-    return this.then(suffix.star()).map((r) {
+    return this.then<List<T>>(suffix.star()).map((r) {
       var preceding =
           r.value.isEmpty ? [] : (r.value[0] == null ? [] : [r.value[0]]);
       var out = new List<T>.from(preceding);

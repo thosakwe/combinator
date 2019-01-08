@@ -180,7 +180,8 @@ abstract class Parser<T> {
       new _Safe<T>(
           this, backtrack, errorMessage, severity ?? SyntaxErrorSeverity.error);
 
-  Parser<List<T>> separatedByComma() => separatedBy(match<List<T>>(',').space());
+  Parser<List<T>> separatedByComma() =>
+      separatedBy(match<List<T>>(',').space());
 
   /// Expects to see an infinite amounts of the pattern, separated by the [other] pattern.
   ///
@@ -271,14 +272,6 @@ abstract class Parser<T> {
 
   /// Prints a representation of this parser, ideally without causing a stack overflow.
   void stringify(CodeBuffer buffer);
-
-  @override
-  String toString() {
-    return super.toString();
-    var b = new CodeBuffer();
-    stringify(b);
-    return b.toString();
-  }
 }
 
 /// A [Parser] that produces [List]s of a type [T].
@@ -320,7 +313,8 @@ class Trampoline {
   }
 
   ParseResult<T> getMemoized<T>(Parser parser, int position) {
-    return _memo[parser].firstWhere((t) => t.item1 == position).item2 as ParseResult<T>;
+    return _memo[parser].firstWhere((t) => t.item1 == position).item2
+        as ParseResult<T>;
   }
 
   void memoize(Parser parser, int position, ParseResult result) {

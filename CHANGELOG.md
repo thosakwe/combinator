@@ -1,3 +1,6 @@
+# 1.1.0
+* Add `tupleX` parsers. Hooray for strong typing!
+
 # 1.0.0+3
 * `then` now *always* returns `dynamic`.
 

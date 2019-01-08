@@ -21,12 +21,12 @@ void main() {
     match('+'): (l, r, _) => l + r,
     match('-'): (l, r, _) => l - r,
 
-    /*
+    
     match('-'): (l, r, _) => l - r,
     match('+'): (l, r, _) => l + r,
     match('/'): (l, r, _) => l / r,
     match('*'): (l, r, _) => l * r,
-    */
+    
   });
 
   term.parser = r.precedence(0);

@@ -49,7 +49,8 @@ void main() {
           out.insert(0, current);
         else {
           var args = [];
-          for (int i = 0; i < (current.item1 as num); i++) args.add(out.removeLast());
+          for (int i = 0; i < (current.item1 as num); i++)
+            args.add(out.removeLast());
           out.add(current.item2(args));
         }
       }

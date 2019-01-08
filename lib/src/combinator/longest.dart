@@ -50,7 +50,8 @@ class _Longest<T> extends Parser<T> {
       errors.add(
         new SyntaxError(
           severity,
-          errorMessage?.toString() ?? 'No match found for ${parsers.length} alternative(s)',
+          errorMessage?.toString() ??
+              'No match found for ${parsers.length} alternative(s)',
           args.scanner.emptySpan,
         ),
       );
@@ -83,7 +84,8 @@ class _Longest<T> extends Parser<T> {
     errors.add(
       new SyntaxError(
         severity,
-        errorMessage?.toString() ?? 'No match found for ${parsers.length} alternative(s)',
+        errorMessage?.toString() ??
+            'No match found for ${parsers.length} alternative(s)',
         args.scanner.emptySpan,
       ),
     );

@@ -1,8 +1,8 @@
 // Run this with "Basic QWxhZGRpbjpPcGVuU2VzYW1l"
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:combinator/combinator.dart';
-import 'package:dart2_constant/convert.dart';
 import 'package:string_scanner/string_scanner.dart';
 
 /// Parse a part of a decoded Basic auth string.
@@ -25,8 +25,9 @@ final Parser<Map<String, String>> credentials = chain<String>([
 /// This is used here to BASE64URL-decode a string, and then
 /// parse the decoded string.
 final Parser credentialString = match<Map<String, String>>(
-    new RegExp(r'([^\n$]+)'),
-    errorMessage: 'Expected a credential string.').value((r) {
+        new RegExp(r'([^\n$]+)'),
+        errorMessage: 'Expected a credential string.')
+    .value((r) {
   var decoded = utf8.decode(base64Url.decode(r.span.text));
   var scanner = new SpanScanner(decoded);
   return credentials.parse(scanner).value;
